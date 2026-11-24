@@ -24,6 +24,18 @@ pub const EXP6_IN: Easing = Easing::Bezier(0.6, 0.0, 0.85, 0.05);
 /// Metro's ease for the live tile's slide.
 pub const IN_OUT_CUBIC: Easing = Easing::Curve(Curve::Cubic, EaseMode::InOut);
 
+/// Frame rate for ambient motion: what runs on its own (live tile peeks,
+/// progress indicators) rather than in answer to the user. nsh runs an
+/// animation at the screen's top rate unless told otherwise (120 Hz on a
+/// ProMotion display); Windows Phone drew this at 60, and so did
+/// gpui-metro. Transitions the user starts keep the screen's rate.
+pub const AMBIENT_FPS: f32 = 60.;
+
+/// A timing for ambient motion: capped at [`AMBIENT_FPS`].
+pub fn ambient(ms: f32, easing: Easing) -> Timing {
+    Timing::new(ms, easing).frame_rate(AMBIENT_FPS)
+}
+
 /// The exponential ease-out itself, for code that samples it.
 pub fn ease_out_exp6(t: f32) -> f32 {
     let t = t.clamp(0., 1.);

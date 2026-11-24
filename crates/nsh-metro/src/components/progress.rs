@@ -56,7 +56,7 @@ fn sampled(n: usize, f: impl Fn(f32) -> f32) -> (Vec<f32>, Vec<f32>) {
 /// A clock running 0 → 1 every `ms`, forever.
 fn clock(ms: f32) -> AnimatedValue {
     let t = animated_value(0.);
-    let anim = Animation::timing(&t, 1., Timing::new(ms, Easing::Linear)).looped(None);
+    let anim = Animation::timing(&t, 1., crate::motion::ambient(ms, Easing::Linear)).looped(None);
     let _ = anim.start();
     cleanup(move || anim.stop());
     t

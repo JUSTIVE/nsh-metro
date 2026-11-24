@@ -1,41 +1,36 @@
-use nsh_core::{element::desktop::window, prelude::*, TransformKind, element::TransformOrigin};
-use nsh_platform_macos as platform;
+//! Smoke test: a reflowing tile grid that pins a tile every 1.5 s.
+use std::time::Duration;
 
-const EXP6_OUT: Easing = Easing::Bezier(0.15, 0.95, 0.4, 1.0);
+use nsh_core::prelude::*;
+use nsh_metro::{Accent, Icon, TileSize, tile, tile_grid};
+use nsh_platform_macos as platform;
 
 #[component]
 pub fn App() -> impl IntoElement {
-    let angles: Vec<AnimatedValue> = (0..6).map(|_| animated_value(90.0)).collect();
-    let anim = Animation::sequence([
-        Animation::stagger(40.0, angles.iter().map(|a| Animation::timing(a, 0.0, Timing::new(350.0, EXP6_OUT)))),
-        Animation::delay(800.0),
-        Animation::stagger(45.0, angles.iter().map(|a| Animation::timing(a, 90.0, Timing::new(250.0, Easing::Bezier(0.6, 0.0, 0.85, 0.05))))),
-        Animation::delay(500.0),
-    ])
-    .looped(None);
-    let _ = anim.start();
-    let tiles = move || angles.clone().into_iter().enumerate().map(|(i, a)| {
-        let (x, y) = ((i % 2) as f32 * 160.0, (i / 2) as f32 * 160.0);
-        view()
-            .absolute()
-            .left(px(x))
-            .top(px(y))
-            .size(px(150.0))
-            .bg(rgb(0x0050EF))
-            .transform_origin(TransformOrigin { x: px(-(x + 24.0)).into(), y: relative(0.5).into(), z: Points::ZERO })
-            .bind_transform(TransformKind::RotateY, &a)
-            .child(text(format!("tile {i}")).text_color(rgb(0xffffff)))
-    }).collect::<Vec<_>>();
-    window().id("main").content(move || {
-        view().flex_1().bg(rgb(0x000000)).p(px(24.0)).perspective(px(1000.0)).child(
-            view().relative().size(px(320.0)).children(tiles()),
-        )
-    })
+    let pinned = signal(0usize);
+    let _t = set_interval(Duration::from_millis(1500), move || pinned.update(|n| *n = (*n + 1) % 4));
+    let grid = tile_grid().source(move || {
+        let n = pinned.get();
+        eprintln!("source: pinned={n}");
+        let mut tiles = vec![
+            tile("mail", TileSize::Medium).icon(Icon::Mail),
+            tile("phone", TileSize::Small).icon(Icon::Phone).color(Accent::Green.color()),
+            tile("camera", TileSize::Small).icon(Icon::Camera).color(Accent::Magenta.color()),
+            tile("clock", TileSize::Small).icon(Icon::Clock),
+            tile("search", TileSize::Small).icon(Icon::Search).color(Accent::Orange.color()),
+            tile("people", TileSize::Wide).icon(Icon::People).color(Accent::Crimson.color()),
+        ];
+        for i in (0..n).rev() {
+            tiles.insert(1, tile(format!("pin{i}"), TileSize::Small).icon(Icon::Favorite).color(Accent::Teal.color()));
+        }
+        tiles
+    });
+    view().flex_1().bg(rgb(0x000000)).p(px(24.)).child(grid)
 }
 
 fn main() -> impl std::process::Termination {
     platform::run_app(
         platform::AppSource::Rust(platform::Root::of::<App>()),
-        platform::AppOptions { title: "nsh hello".to_owned(), size: (480, 640), ..Default::default() },
+        platform::AppOptions { title: "nsh hello".to_owned(), size: (520, 700), ..Default::default() },
     )
 }

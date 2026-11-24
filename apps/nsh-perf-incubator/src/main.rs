@@ -18,7 +18,7 @@
 
 use std::time::{Duration, Instant};
 
-use nsh_core::{element::desktop::window, prelude::*};
+use nsh_core::prelude::*;
 use nsh_metro::{
     Icon, TextStyle, TileSize, list_item, panorama, pivot, progress_bar, progress_dots, progress_ring, text,
     theme::{palette, size as type_size, u},
@@ -257,12 +257,9 @@ fn Lab() -> impl IntoElement {
             std::process::exit(0);
         });
     }
-    window().id("main").title("nsh-metro perf incubator").default_size(Size { width: px(1280.), height: px(900.) }).content(move || {
-        view()
-            .flex_1()
-            .bg(move || palette().background)
-            .child(dynamic(move || scene(current.get(), page)))
-    })
+    // The root's view is the main window's content (AppOptions sets its
+    // title and size); a `window()` here would open a second window.
+    view().flex_1().bg(move || palette().background).child(dynamic(move || scene(current.get(), page)))
 }
 
 fn main() -> impl std::process::Termination {

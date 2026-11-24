@@ -173,8 +173,8 @@ fn peek_animation(y: &AnimatedValue, h: f32, period: f32, phase: f32) -> Animati
     let slide = (PEEK_SLIDE_SECS / period).clamp(0.001, 0.5);
     let rest = (0.5 - slide) * ms;
     let slide_ms = slide * ms;
-    let up = || Animation::timing(y, -h, Timing::new(slide_ms, IN_OUT_CUBIC));
-    let down = || Animation::timing(y, 0., Timing::new(slide_ms, IN_OUT_CUBIC));
+    let up = || Animation::timing(y, -h, motion::ambient(slide_ms, IN_OUT_CUBIC));
+    let down = || Animation::timing(y, 0., motion::ambient(slide_ms, IN_OUT_CUBIC));
     let cycle = Animation::sequence([Animation::delay(rest), up(), Animation::delay(rest), down()]).looped(None);
     // The rest of the current cycle, then the loop from its start.
     let t = start;
@@ -183,13 +183,13 @@ fn peek_animation(y: &AnimatedValue, h: f32, period: f32, phase: f32) -> Animati
         vec![Animation::delay((0.5 - slide - t) * ms), up(), Animation::delay(rest), down()]
     } else if t < 0.5 {
         y.set(-h * peek_offset(t, slide));
-        vec![Animation::timing(y, -h, Timing::new((0.5 - t) * ms, EXP6_OUT)), Animation::delay(rest), down()]
+        vec![Animation::timing(y, -h, motion::ambient((0.5 - t) * ms, EXP6_OUT)), Animation::delay(rest), down()]
     } else if t < 1. - slide {
         y.set(-h);
         vec![Animation::delay((1. - slide - t) * ms), down()]
     } else {
         y.set(-h * peek_offset(t, slide));
-        vec![Animation::timing(y, 0., Timing::new((1. - t) * ms, EXP6_OUT))]
+        vec![Animation::timing(y, 0., motion::ambient((1. - t) * ms, EXP6_OUT))]
     };
     Animation::sequence(first.into_iter().chain([cycle]))
 }
@@ -495,6 +495,7 @@ pub struct TileGrid {
     replay: Option<ReadSignal<usize>>,
     leave: Option<ReadSignal<bool>>,
     hinge: f32,
+    source: Option<Rc<dyn Fn() -> Vec<Tile>>>,
 }
 
 pub fn tile_grid() -> TileGrid {
@@ -509,6 +510,7 @@ pub fn tile_grid() -> TileGrid {
         replay: None,
         leave: None,
         hinge: PAGE_MARGIN,
+        source: None,
     }
 }
 
@@ -567,6 +569,17 @@ impl TileGrid {
         self
     }
 
+    /// Tiles that change: `f` is read reactively, and whenever what it read
+    /// changes the grid re-packs. Tiles are known by their key: one that
+    /// moved slides to its new place (rows nearest the change first), one
+    /// that is new waits edge-on for room and then turns in, one that went
+    /// is removed. A tile's faces are built when it first appears. (One
+    /// group; the turnstile, `replay` and `leave` apply to static grids.)
+    pub fn source(mut self, f: impl Fn() -> Vec<Tile> + 'static) -> Self {
+        self.source = Some(Rc::new(f));
+        self
+    }
+
     /// The width of one group, in px.
     pub fn group_width(&self) -> f32 {
         self.columns as f32 * self.unit + (self.columns.saturating_sub(1)) as f32 * self.gap
@@ -585,6 +598,9 @@ impl TileGrid {
 
 impl IntoElement for TileGrid {
     fn into_element(self) -> AnyElement {
+        if let Some(source) = self.source.clone() {
+            return self.reflowing(source);
+        }
         let step = self.unit + self.gap;
         let width = self.width();
         let (unit, gap, hinge) = (self.unit, self.gap, self.hinge);
@@ -690,21 +706,19 @@ impl IntoElement for TileGrid {
             .map(|(ix, (mut t, (x, y)))| {
                 // Route the click through the exit: animate first, launch after.
                 if turnstile && let Some(launch) = t.on_click.take() {
-                    let (exit, busy, angles) = (exit.clone(), busy.clone(), angles.clone());
+                    let (exit, busy) = (exit.clone(), busy.clone());
                     t.on_click = Some(Rc::new(move || {
                         if busy.replace(true) {
                             return;
                         }
                         let end = exit(ix);
-                        let (launch, busy, angles) = (launch.clone(), busy.clone(), angles.clone());
+                        let (launch, busy) = (launch.clone(), busy.clone());
                         spawn(async move {
                             end.await;
-                            launch();
-                            // Re-arm, so a grid that stays on screen comes back.
-                            for a in &angles {
-                                a.set(0.);
-                            }
+                            // The tiles stay away: the app is opening. A grid
+                            // that stays on screen comes back with `replay`.
                             busy.set(false);
+                            launch();
                         });
                     }));
                 }
@@ -729,10 +743,153 @@ impl IntoElement for TileGrid {
     }
 }
 
+/// How long a tile takes to slide to a new place when the grid reflows, ms.
+pub const REFLOW: f32 = 400.;
+/// Gap between rows as they slide: the push travels down from the change.
+const REFLOW_STEP: f32 = 30.;
+const REFLOW_WAVE_MAX: f32 = 150.;
+/// A new tile waits this long for the others to make room, then turns in.
+const ARRIVE_AFTER: f32 = 120.;
+
+/// Start delays (ms) for a reflow: the moving tiles' rows, nearest the
+/// change (`origin`) first.
+pub fn reflow_schedule(rows: &[usize], origin: usize) -> Vec<f32> {
+    let dist: Vec<usize> = rows.iter().map(|&r| r.abs_diff(origin)).collect();
+    let mut ranks = dist.clone();
+    ranks.sort_unstable();
+    ranks.dedup();
+    let step = match ranks.len() {
+        0 | 1 => REFLOW_STEP,
+        n => REFLOW_STEP.min(REFLOW_WAVE_MAX / (n as f32 - 1.)),
+    };
+    dist.iter().map(|d| step * ranks.binary_search(d).unwrap_or(0) as f32).collect()
+}
+
+/// A tile's place in a reflowing grid: where it is drawn (animated), how
+/// far it has turned in, and its tile until it is first built.
+struct Slot {
+    x: AnimatedValue,
+    y: AnimatedValue,
+    angle: AnimatedValue,
+    at: (f32, f32),
+    tile: Option<Tile>,
+}
+
+impl TileGrid {
+    fn reflowing(self, source: Rc<dyn Fn() -> Vec<Tile>>) -> AnyElement {
+        let (unit, gap, columns, hinge) = (self.unit, self.gap, self.columns, self.hinge);
+        let step = unit + gap;
+        let width = self.group_width();
+        let slots: Rc<RefCell<std::collections::HashMap<SharedString, Slot>>> = Rc::default();
+        let keys = signal(Vec::<SharedString>::new());
+        let height = signal(0f32);
+        let mounted = Rc::new(std::cell::Cell::new(false));
+        // Tiles' animated values belong to the grid, not to the effect: an
+        // effect disposes what it made on its last run each time it runs.
+        let owner = Owner::current();
+        {
+            let slots = slots.clone();
+            effect(move || {
+                let tiles = source();
+                untracked(|| {
+                    let sizes: Vec<TileSize> = tiles.iter().map(|t| t.size).collect();
+                    let packed = pack(&sizes, columns);
+                    let rows = packed_rows(&sizes, &packed);
+                    height.set(rows as f32 * step - if rows > 0 { gap } else { 0. });
+                    let reduced = reduced_motion();
+                    let first = !mounted.replace(true);
+                    let mut slots = slots.borrow_mut();
+                    // What moved, and the topmost row that changed.
+                    let mut moved: Vec<(SharedString, (f32, f32), usize)> = Vec::new();
+                    let mut origin = usize::MAX;
+                    let mut new_keys = Vec::with_capacity(tiles.len());
+                    for (t, &(c, r)) in tiles.into_iter().zip(&packed) {
+                        let to = (c as f32 * step, r as f32 * step);
+                        let key = t.key.clone();
+                        new_keys.push(key.clone());
+                        match slots.get_mut(&key) {
+                            Some(slot) => {
+                                if slot.at != to {
+                                    slot.at = to;
+                                    moved.push((key, to, r));
+                                    origin = origin.min(r);
+                                }
+                            }
+                            None => {
+                                let arriving = !first && !reduced;
+                                let (angle, x, y) = owner.run(|| {
+                                    (animated_value(if arriving { ENTER_FROM_DEG } else { 0. }), animated_value(to.0), animated_value(to.1))
+                                });
+                                if arriving {
+                                    origin = origin.min(r);
+                                    let _ = Animation::sequence([
+                                        Animation::delay(ARRIVE_AFTER),
+                                        Animation::timing(&angle, 0., Timing::new(motion::ENTER, EXP6_OUT)),
+                                    ])
+                                    .start();
+                                }
+                                let slot = Slot { x, y, angle, at: to, tile: Some(t) };
+                                slots.insert(key, slot);
+                            }
+                        }
+                    }
+                    let rows: Vec<usize> = moved.iter().map(|m| m.2).collect();
+                    let delays = reflow_schedule(&rows, if origin == usize::MAX { 0 } else { origin });
+                    for ((key, to, _), delay) in moved.iter().zip(delays) {
+                        let slot = &slots[key];
+                        if reduced {
+                            slot.x.set(to.0);
+                            slot.y.set(to.1);
+                        } else {
+                            let _ = Animation::sequence([
+                                Animation::delay(delay),
+                                Animation::parallel([
+                                    Animation::timing(&slot.x, to.0, Timing::new(REFLOW, EXP6_OUT)),
+                                    Animation::timing(&slot.y, to.1, Timing::new(REFLOW, EXP6_OUT)),
+                                ]),
+                            ])
+                            .start();
+                        }
+                    }
+                    slots.retain(|k, _| new_keys.contains(k));
+                    keys.set(new_keys);
+                });
+            });
+        }
+        let tiles = each(
+            move || keys.get(),
+            |k: &SharedString| k.clone(),
+            move |key: ReadSignal<SharedString>, _| {
+                let key = untracked(|| key.get());
+                let mut slots = slots.borrow_mut();
+                let Some(slot) = slots.get_mut(&key) else { return view().into_element() };
+                let tile = slot.tile.take().map(|t| t.metrics(unit, gap).into_element());
+                view()
+                    .absolute()
+                    .left_0()
+                    .top_0()
+                    .bind_translate_x(&slot.x)
+                    .bind_translate_y(&slot.y)
+                    .child(motion::turned(&slot.angle, slot.at.0 + hinge, tile.unwrap_or_else(|| view().into_element())))
+                    .into_element()
+            },
+        );
+        view().relative().flex_shrink_0().w(u(width)).h(move || u(height.get())).child(tiles).into_element()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::TileSize::*;
     use super::*;
+
+    #[test]
+    fn a_reflow_pushes_out_from_the_change() {
+        let d = reflow_schedule(&[2, 2, 4, 6], 2);
+        assert_eq!(d[0], d[1]);
+        assert!(d[0] < d[2] && d[2] < d[3], "{d:?}");
+        assert!(reflow_schedule(&(0..40).collect::<Vec<_>>(), 0).iter().all(|&x| x <= REFLOW_WAVE_MAX));
+    }
 
     #[test]
     fn smalls_fill_a_block_before_moving_on() {
