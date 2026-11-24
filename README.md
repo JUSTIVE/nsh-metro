@@ -22,6 +22,21 @@ cargo run --release -p nsh-perf-incubator   # CPU (app + WindowServer) per scene
 `CATALOG_PAGE=pivot` opens the catalog on a page. Requires Rust 1.97+ and
 macOS 14+.
 
+## Use it with an AI agent
+
+This repository is a Claude Code plugin marketplace. Install the skill and
+Claude learns the model, every component and the pitfalls:
+
+```text
+/plugin marketplace add JUSTIVE/nsh-metro
+/plugin install nsh-metro@nsh-metro
+```
+
+Other agents can read [`llms.txt`](llms.txt), an index of the docs, or
+[`AGENTS.md`](AGENTS.md) for working on this repository. The skill is plain
+Markdown under [`plugins/nsh-metro/skills/nsh-metro`](plugins/nsh-metro/skills/nsh-metro).
+CI builds its starter, [`apps/nsh-starter`](apps/nsh-starter/src/main.rs).
+
 ## Layout
 
 | path | what |
@@ -31,3 +46,5 @@ macOS 14+.
 | `apps/nsh-no-ativ` | a lab dashboard app |
 | `apps/nsh-perf-incubator` | stress scenes measured by CPU |
 | `apps/nsh-hello` | smoke test: a reflowing tile grid |
+| `apps/nsh-starter` | the template the agent skill hands out |
+| `plugins/nsh-metro` | the Claude Code skill: guide, component reference, pitfalls |

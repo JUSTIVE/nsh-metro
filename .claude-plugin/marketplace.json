@@ -1,0 +1,15 @@
+{
+  "name": "nsh-metro",
+  "owner": { "name": "JUSTIVE" },
+  "metadata": {
+    "description": "Skills for building Windows Phone Metro-style macOS apps with nsh-metro on Native Shell (nsh)."
+  },
+  "plugins": [
+    {
+      "name": "nsh-metro",
+      "source": "./plugins/nsh-metro",
+      "description": "Build Metro-style (Windows Phone) native macOS apps in Rust with nsh-metro: tiles, pivots, panoramas, turnstile navigation, theming.",
+      "category": "development"
+    }
+  ]
+}

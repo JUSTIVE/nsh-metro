@@ -19,6 +19,8 @@ jobs:
         with:
           components: rustfmt, clippy
       - uses: Swatinem/rust-cache@v2
+      - name: skill starter matches apps/nsh-starter
+        run: diff -u apps/nsh-starter/src/main.rs plugins/nsh-metro/skills/nsh-metro/assets/starter.rs
       - name: format
         run: cargo fmt --all --check
       - name: clippy

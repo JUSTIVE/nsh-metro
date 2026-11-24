@@ -1,0 +1,22 @@
+# nsh-metro
+
+> The Windows Phone "Metro" design system for Native Shell (nsh-core 0.6.1, https://nsh.dev): a Rust crate for native macOS apps (AppKit, Core Animation) with live tiles, tile grids, pivots, panoramas, turnstile page navigation, app bar, settings flyout, message box, context menu, Metro controls and an accent/dark-light theme. Rust 1.97+, macOS 14+.
+
+Add `nsh-metro = { git = "https://github.com/JUSTIVE/nsh-metro" }` next to `nsh-core = "0.6.1"` and `nsh-platform-macos = { version = "0.6.1", default-features = false, features = ["svg"] }`. Then `use nsh_core::prelude::*; use nsh_metro::prelude::*; use nsh_metro::text;`.
+
+## Docs
+
+- [Skill: how to build an app with it](https://github.com/JUSTIVE/nsh-metro/blob/main/plugins/nsh-metro/skills/nsh-metro/SKILL.md): the model in five rules, setup, a building-block table
+- [Component reference](https://github.com/JUSTIVE/nsh-metro/blob/main/plugins/nsh-metro/skills/nsh-metro/references/components.md): every builder and its options
+- [Pitfalls](https://github.com/JUSTIVE/nsh-metro/blob/main/plugins/nsh-metro/skills/nsh-metro/references/pitfalls.md): the mistakes that cost the most time
+- [Starter app](https://github.com/JUSTIVE/nsh-metro/blob/main/apps/nsh-starter/src/main.rs): a compiling template (start screen → pivot app, app bar, settings flyout)
+
+## Working on the crate
+
+- [AGENTS.md](https://github.com/JUSTIVE/nsh-metro/blob/main/AGENTS.md): repository index, commands, rules
+- [MIGRATION.md](https://github.com/JUSTIVE/nsh-metro/blob/main/crates/nsh-metro/MIGRATION.md): porting a gpui app to nsh
+
+## Optional
+
+- [Catalog app source](https://github.com/JUSTIVE/nsh-metro/tree/main/apps/nsh-catalog): a demo of every component variant
+- [no ativ](https://github.com/JUSTIVE/nsh-metro/tree/main/apps/nsh-no-ativ): a full app built on it

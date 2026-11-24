@@ -22,7 +22,10 @@ pub use icons::{Icon, icon};
 pub use nav::page_host;
 pub use theme::{Accent, Mode, Palette, Theme, palette, u};
 
-/// Everything an app usually needs in scope.
+/// Everything an app usually needs in scope, made to be glob-imported next
+/// to `nsh_core::prelude::*` without a clash. It leaves out [`text`], whose
+/// name nsh-core's prelude already has: import it by name
+/// (`use nsh_metro::text;`), which takes precedence over both globs.
 pub mod prelude {
     pub use crate::{
         Accent, AppBarMode, FlyoutWidth, Icon, Leading, ListGroup, Mode, PAGE_MARGIN, Palette, TextStyle, Theme,
@@ -30,7 +33,7 @@ pub mod prelude {
         message_box,
         motion::Direction,
         page_header, page_host, palette, panorama, pivot, progress_bar, progress_dots, progress_ring, radio_button,
-        round_button, settings_flyout, slider, system_tray, text, text_box,
+        round_button, settings_flyout, slider, system_tray, text_box,
         theme::{FONT_FAMILY, LIGHT, SEMIBOLD, SEMILIGHT, size},
         tile, tile_grid, toast, toggle_switch, u, with_context_menu,
     };

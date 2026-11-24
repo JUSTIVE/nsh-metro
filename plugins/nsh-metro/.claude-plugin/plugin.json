@@ -1,0 +1,10 @@
+{
+  "name": "nsh-metro",
+  "version": "0.1.0",
+  "description": "Build Metro-style (Windows Phone) native macOS apps in Rust with nsh-metro: tiles, pivots, panoramas, turnstile navigation, theming.",
+  "author": { "name": "JUSTIVE" },
+  "homepage": "https://github.com/JUSTIVE/nsh-metro",
+  "repository": "https://github.com/JUSTIVE/nsh-metro",
+  "license": "MIT",
+  "keywords": ["rust", "ui", "metro", "nsh", "macos", "design-system"]
+}

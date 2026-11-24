@@ -1348,6 +1348,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "nsh-starter"
+version = "0.1.0"
+dependencies = [
+ "nsh-core",
+ "nsh-metro",
+ "nsh-platform-macos",
+]
+
+[[package]]
 name = "nsh-updater"
 version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
