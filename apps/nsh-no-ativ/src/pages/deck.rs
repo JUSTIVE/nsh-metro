@@ -19,7 +19,7 @@ fn kind_color(kind: DeckKind) -> Hsla {
 }
 
 fn booking(app: App, block: &DeckBlock, store: &Store) -> ListItem {
-    let machine = store.instrument(&block.instrument_id).map(|i| i.code.clone()).unwrap_or_default();
+    let machine = store.instrument(&block.instrument_id).map_or_default(|i| i.code.clone());
     let strain = block.strain_id.as_deref().and_then(|s| store.strain(s)).map(|s| format!(" · {}", s.name));
     let item = list_item(machine)
         .leading_icon(Icon::Calendar)

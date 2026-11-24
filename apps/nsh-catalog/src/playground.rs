@@ -7,12 +7,12 @@ use std::rc::Rc;
 
 use nsh_core::prelude::*;
 use nsh_metro::{
-    Accent, Icon, Leading, ListGroup, TextStyle, TileSize, app_bar, button, check_box, hyperlink, jump_list,
-    label, list_item, list_picker, message_box, page_header, palette, panorama, pivot, progress_bar, progress_dots,
-    progress_ring, radio_button, round_button, settings_flyout, slider, system_tray, text, text_box, tile, tile_grid,
-    toast, toggle_switch, u,
-    AppBarMode, FlyoutWidth,
-    theme::{size, FONT_FAMILY},
+    Accent, AppBarMode, FlyoutWidth, Icon, Leading, ListGroup, TextStyle, TileSize, app_bar, button, check_box,
+    hyperlink, jump_list, label, list_item, list_picker, message_box, page_header, palette, panorama, pivot,
+    progress_bar, progress_dots, progress_ring, radio_button, round_button, settings_flyout, slider, system_tray, text,
+    text_box,
+    theme::{FONT_FAMILY, size},
+    tile, tile_grid, toast, toggle_switch, u,
 };
 
 use crate::pages::Page;
@@ -47,7 +47,7 @@ fn chip(caption: impl Into<SharedString>, on: impl Fn() -> bool + 'static, press
         .border_color(move || if a() { palette().accent } else { palette().disabled })
         .bg(move || if b() { palette().accent } else { palette().accent.opacity(0.) })
         .cursor_pointer()
-        .on_press(move || press())
+        .on_press(press)
         .child(label(caption.into()).text_size(u(size::SMALL)).text_color(move || palette().foreground))
 }
 
@@ -55,9 +55,11 @@ fn chip(caption: impl Into<SharedString>, on: impl Fn() -> bool + 'static, press
 fn choice(name: &'static str, options: &[&'static str], sel: Signal<usize>) -> View {
     knob_row(
         name,
-        view().flex_row().flex_wrap().gap(u(6.)).children(
-            options.iter().enumerate().map(|(i, o)| chip(*o, move || sel.get() == i, move || sel.set(i))),
-        ),
+        view()
+            .flex_row()
+            .flex_wrap()
+            .gap(u(6.))
+            .children(options.iter().enumerate().map(|(i, o)| chip(*o, move || sel.get() == i, move || sel.set(i)))),
     )
 }
 
@@ -65,11 +67,11 @@ fn choice(name: &'static str, options: &[&'static str], sel: Signal<usize>) -> V
 fn flag(name: &'static str, on: Signal<bool>) -> View {
     knob_row(
         name,
-        view()
-            .flex_row()
-            .gap(u(6.))
-            .child(chip("off", move || !on.get(), move || on.set(false)))
-            .child(chip("on", move || on.get(), move || on.set(true))),
+        view().flex_row().gap(u(6.)).child(chip("off", move || !on.get(), move || on.set(false))).child(chip(
+            "on",
+            move || on.get(),
+            move || on.set(true),
+        )),
     )
 }
 
@@ -109,7 +111,8 @@ fn words(name: &'static str, v: Signal<String>) -> View {
 
 const ACCENTS: [&str; 6] = ["theme", "teal", "magenta", "orange", "crimson", "lime"];
 fn accent_of(i: usize) -> Option<Hsla> {
-    [None, Some(Accent::Teal), Some(Accent::Magenta), Some(Accent::Orange), Some(Accent::Crimson), Some(Accent::Lime)][i]
+    [None, Some(Accent::Teal), Some(Accent::Magenta), Some(Accent::Orange), Some(Accent::Crimson), Some(Accent::Lime)]
+        [i]
         .map(Accent::color)
 }
 
@@ -184,10 +187,7 @@ fn row() -> View {
 }
 
 fn tagged(tag: impl Into<SharedString>, el: impl IntoElement) -> View {
-    view()
-        .gap(u(4.))
-        .child(label(tag.into()).text_size(u(size::SMALL)).text_color(move || palette().subtle))
-        .child(el)
+    view().gap(u(4.)).child(label(tag.into()).text_size(u(size::SMALL)).text_color(move || palette().subtle)).child(el)
 }
 
 // ------------------------------------------------------------- pages ----
@@ -201,9 +201,14 @@ fn build(page: Page) -> Playground {
                 view()
                     .flex_row()
                     .gap(u(12.))
-                    .child(view().size(u(96.)).bg(a.color()).justify_end().p(u(6.)).child(
-                        label(a.name()).text_size(u(size::SMALL)).text_color(a.ink()),
-                    ))
+                    .child(
+                        view()
+                            .size(u(96.))
+                            .bg(a.color())
+                            .justify_end()
+                            .p(u(6.))
+                            .child(label(a.name()).text_size(u(size::SMALL)).text_color(a.ink())),
+                    )
                     .child(button("apply to catalog").accent().on_click(move || nsh_metro::Theme::set_accent(a)))
                     .into_element()
             };
@@ -216,10 +221,6 @@ fn build(page: Page) -> Playground {
             let content = signal("strains".to_string());
             let lower = signal(false);
             let truncate = signal(false);
-            const STYLES: [&str; 11] = [
-                "title 1", "title 2", "title 3", "extra large", "large", "normal", "subtle", "accent", "small",
-                "app title", "group header",
-            ];
             let of = |i: usize| {
                 [
                     TextStyle::Title1,
@@ -246,9 +247,12 @@ fn build(page: Page) -> Playground {
                 t.into_element()
             };
             let variants = view().gap(u(6.)).children((0..STYLES.len()).map(move |i| {
-                view().flex_row().items_center().gap(u(12.)).child(
-                    label(STYLES[i]).w(u(110.)).text_size(u(size::SMALL)).text_color(move || palette().subtle),
-                ).child(text(of(i), "the quick fox"))
+                view()
+                    .flex_row()
+                    .items_center()
+                    .gap(u(12.))
+                    .child(label(STYLES[i]).w(u(110.)).text_size(u(size::SMALL)).text_color(move || palette().subtle))
+                    .child(text(of(i), "the quick fox"))
             }));
             pg(
                 preview,
@@ -269,9 +273,8 @@ fn build(page: Page) -> Playground {
                 let c = accent_of(color.get());
                 icon_of(ic.get()).render(px_.get(), move || c.unwrap_or(palette().foreground))
             };
-            let variants = row().children(Icon::ALL.iter().map(|i| {
-                tagged(i.name(), i.render(28., move || palette().foreground))
-            }));
+            let variants =
+                row().children(Icon::ALL.iter().map(|i| tagged(i.name(), i.render(28., move || palette().foreground))));
             pg(
                 preview,
                 vec![choice("icon", &ICONS, ic), number("size", px_, 12., 128., 1.), choice("colour", &ACCENTS, color)],
@@ -291,7 +294,6 @@ fn build(page: Page) -> Playground {
             let tappable = signal(true);
             let headline = signal("ben, kristin".to_string());
             let taps = signal(0u32);
-            const SIZES: [&str; 4] = ["small", "medium", "wide", "large"];
             let size_of = |i: usize| [TileSize::Small, TileSize::Medium, TileSize::Wide, TileSize::Large][i];
             let preview = move || {
                 let mut t = tile("pg-tile", size_of(sz.get())).count(move || count.get() as u32).metrics(80., 10.);
@@ -306,16 +308,28 @@ fn build(page: Page) -> Playground {
                     t = t.color(c);
                 }
                 if live.get() {
-                    t = t.back_text(headline.get(), ["3 new posts", "and 2 photos"]).period(period.get()).phase(phase.get());
+                    t = t
+                        .back_text(headline.get(), ["3 new posts", "and 2 photos"])
+                        .period(period.get())
+                        .phase(phase.get());
                 }
                 if tappable.get() {
                     t = t.on_click(move || taps.update(|n| *n += 1));
                 }
-                view().gap(u(10.)).child(t).child(label(move || format!("{} taps", taps.get())).text_size(u(size::SMALL)).text_color(move || palette().subtle)).into_element()
+                view()
+                    .gap(u(10.))
+                    .child(t)
+                    .child(
+                        label(move || format!("{} taps", taps.get()))
+                            .text_size(u(size::SMALL))
+                            .text_color(move || palette().subtle),
+                    )
+                    .into_element()
             };
             let variants = row().children((0..4).flat_map(|s| {
                 [false, true].into_iter().map(move |l| {
-                    let mut t = tile(format!("v-{s}-{l}"), size_of(s)).icon(Icon::Mail).count(2).title("mail").metrics(44., 6.);
+                    let mut t =
+                        tile(format!("v-{s}-{l}"), size_of(s)).icon(Icon::Mail).count(2).title("mail").metrics(44., 6.);
                     if l {
                         t = t.back_text("2 new", ["from ben"]).period(6. + s as f32);
                     }
@@ -352,11 +366,23 @@ fn build(page: Page) -> Playground {
             let preview = move || {
                 let cols = [4, 6, 8][columns.get()];
                 let make = move |i: usize| {
-                    let s = [TileSize::Medium, TileSize::Small, TileSize::Small, TileSize::Wide, TileSize::Small, TileSize::Medium][i % 6];
+                    let s = [
+                        TileSize::Medium,
+                        TileSize::Small,
+                        TileSize::Small,
+                        TileSize::Wide,
+                        TileSize::Small,
+                        TileSize::Medium,
+                    ][i % 6];
                     tile(format!("g{i}"), s).icon(icon_of(i % 8)).color(Accent::ALL[(i * 7) % 20].color())
                 };
                 let count = n.get() as usize;
-                let mut g = tile_grid().columns(cols).metrics(unit.get(), gap.get()).hinge(20.).turnstile(turnstile.get()).replay(replay.read_only());
+                let mut g = tile_grid()
+                    .columns(cols)
+                    .metrics(unit.get(), gap.get())
+                    .hinge(20.)
+                    .turnstile(turnstile.get())
+                    .replay(replay.read_only());
                 if groups.get() {
                     let half = count / 2;
                     g = g.group("first", (0..half).map(make)).group("second", (half..count).map(make));
@@ -366,16 +392,27 @@ fn build(page: Page) -> Playground {
                 view()
                     .gap(u(14.))
                     .child(g)
-                    .child(label("reflowing grid: pin tiles in after the first").text_size(u(size::SMALL)).text_color(move || palette().subtle))
                     .child(
-                        view().flex_row().gap(u(8.))
+                        label("reflowing grid: pin tiles in after the first")
+                            .text_size(u(size::SMALL))
+                            .text_color(move || palette().subtle),
+                    )
+                    .child(
+                        view()
+                            .flex_row()
+                            .gap(u(8.))
                             .child(button("pin a tile").on_click(move || pinned.update(|p| *p += 1)))
                             .child(button("unpin").on_click(move || pinned.update(|p| *p = p.saturating_sub(1)))),
                     )
                     .child(tile_grid().columns(cols).metrics(unit.get(), gap.get()).source(move || {
                         let mut v: Vec<_> = (0..6).map(make).collect();
                         for p in (0..pinned.get()).rev() {
-                            v.insert(1, tile(format!("pin{p}"), TileSize::Small).icon(Icon::Favorite).color(Accent::Teal.color()));
+                            v.insert(
+                                1,
+                                tile(format!("pin{p}"), TileSize::Small)
+                                    .icon(Icon::Favorite)
+                                    .color(Accent::Teal.color()),
+                            );
                         }
                         v
                     }))
@@ -398,7 +435,6 @@ fn build(page: Page) -> Playground {
             let headers = signal(4f32);
             let has_title = signal(true);
             let sel = signal(0usize);
-            const NAMES: [&str; 6] = ["inbox", "unread", "flagged", "urgent", "sent", "drafts"];
             let preview = move || {
                 let k = headers.get() as usize;
                 let mut p = pivot(NAMES[..k].iter().copied(), move || sel.get().min(k - 1))
@@ -415,8 +451,11 @@ fn build(page: Page) -> Playground {
                 }
                 p.into_element()
             };
-            pg(preview, vec![number("headers", headers, 1., 6., 1.), flag("title", has_title), choice("selected", &NAMES, sel)])
-                .height(440.)
+            pg(
+                preview,
+                vec![number("headers", headers, 1., 6., 1.), flag("title", has_title), choice("selected", &NAMES, sel)],
+            )
+            .height(440.)
         }
         Page::Panorama => {
             let sections = signal(4f32);
@@ -425,7 +464,9 @@ fn build(page: Page) -> Playground {
             let title = signal("music + videos".to_string());
             let preview = move || {
                 let k = sections.get() as usize;
-                let mut p = panorama(title.get(), move || sel.get().min(k - 1)).section_width(width.get()).on_select(move |i| sel.set(i));
+                let mut p = panorama(title.get(), move || sel.get().min(k - 1))
+                    .section_width(width.get())
+                    .on_select(move |i| sel.set(i));
                 for i in 0..k {
                     p = p.section(format!("section {i}"), move || {
                         view().children((0..4).map(move |r| list_item(format!("item {i}.{r}")).subtitle("artist")))
@@ -455,8 +496,7 @@ fn build(page: Page) -> Playground {
                 let mut b = app_bar()
                     .mode(if mode.get() == 0 { AppBarMode::Default } else { AppBarMode::Minimized })
                     .opacity(opacity.get());
-                for i in 0..buttons.get() as usize {
-                    let name = ICONS[i];
+                for (i, &name) in ICONS.iter().enumerate().take(buttons.get() as usize) {
                     b = b.button(icon_of(i), name, move || log.set(format!("tapped {name}")));
                 }
                 if disabled.get() {
@@ -506,20 +546,34 @@ fn build(page: Page) -> Playground {
                 view()
                     .gap(u(10.))
                     .child(b.disabled(disabled.get()))
-                    .child(label(move || format!("{} taps", taps.get())).text_size(u(size::SMALL)).text_color(move || palette().subtle))
+                    .child(
+                        label(move || format!("{} taps", taps.get()))
+                            .text_size(u(size::SMALL))
+                            .text_color(move || palette().subtle),
+                    )
                     .into_element()
             };
             let variants = view().gap(u(10.)).children([false, true].into_iter().map(|dis| {
-                row().children([(false, false), (true, false), (false, true), (true, true)].into_iter().map(move |(acc, ic)| {
-                    let mut b = button(if acc { "save" } else { "send" }).disabled(dis);
-                    if acc {
-                        b = b.accent();
-                    }
-                    if ic {
-                        b = b.icon(Icon::Share);
-                    }
-                    tagged(format!("{}{}{}", if acc { "accent" } else { "normal" }, if ic { " + glyph" } else { "" }, if dis { ", disabled" } else { "" }), b)
-                }))
+                row().children([(false, false), (true, false), (false, true), (true, true)].into_iter().map(
+                    move |(acc, ic)| {
+                        let mut b = button(if acc { "save" } else { "send" }).disabled(dis);
+                        if acc {
+                            b = b.accent();
+                        }
+                        if ic {
+                            b = b.icon(Icon::Share);
+                        }
+                        tagged(
+                            format!(
+                                "{}{}{}",
+                                if acc { "accent" } else { "normal" },
+                                if ic { " + glyph" } else { "" },
+                                if dis { ", disabled" } else { "" }
+                            ),
+                            b,
+                        )
+                    },
+                ))
             }));
             pg(
                 preview,
@@ -552,15 +606,29 @@ fn build(page: Page) -> Playground {
                             .disabled(disabled.get())
                             .on_click(move || taps.update(|n| *n += 1)),
                     )
-                    .child(label(move || format!("{} taps", taps.get())).text_size(u(size::SMALL)).text_color(move || palette().subtle))
+                    .child(
+                        label(move || format!("{} taps", taps.get()))
+                            .text_size(u(size::SMALL))
+                            .text_color(move || palette().subtle),
+                    )
                     .into_element()
             };
-            let variants = row().children([(false, false), (true, false), (false, true), (true, true)].into_iter().map(|(f, dis)| {
-                tagged(format!("{}{}", if f { "filled" } else { "outline" }, if dis { ", disabled" } else { "" }), round_button(Icon::Play).filled(f).disabled(dis))
-            }));
+            let variants = row().children(
+                [(false, false), (true, false), (false, true), (true, true)].into_iter().map(|(f, dis)| {
+                    tagged(
+                        format!("{}{}", if f { "filled" } else { "outline" }, if dis { ", disabled" } else { "" }),
+                        round_button(Icon::Play).filled(f).disabled(dis),
+                    )
+                }),
+            );
             pg(
                 preview,
-                vec![choice("glyph", &ICONS, ic), number("diameter", d, 24., 96., 1.), flag("filled", filled), flag("disabled", disabled)],
+                vec![
+                    choice("glyph", &ICONS, ic),
+                    number("diameter", d, 24., 96., 1.),
+                    flag("filled", filled),
+                    flag("disabled", disabled),
+                ],
             )
             .variants(variants)
         }
@@ -571,7 +639,11 @@ fn build(page: Page) -> Playground {
                 view()
                     .gap(u(10.))
                     .child(hyperlink(caption.get()).on_click(move || taps.update(|n| *n += 1)))
-                    .child(label(move || format!("{} taps", taps.get())).text_size(u(size::SMALL)).text_color(move || palette().subtle))
+                    .child(
+                        label(move || format!("{} taps", taps.get()))
+                            .text_size(u(size::SMALL))
+                            .text_color(move || palette().subtle),
+                    )
                     .into_element()
             };
             pg(preview, vec![words("label", caption)])
@@ -583,16 +655,23 @@ fn build(page: Page) -> Playground {
             let off_l = signal("Off".to_string());
             let disabled = signal(false);
             let preview = move || {
-                let mut t = toggle_switch(on).labels(on_l.get(), off_l.get()).disabled(disabled.get()).on_change(move |v| on.set(v));
+                let mut t = toggle_switch(on)
+                    .labels(on_l.get(), off_l.get())
+                    .disabled(disabled.get())
+                    .on_change(move |v| on.set(v));
                 let h = header.get();
                 if !h.is_empty() {
                     t = t.header(h);
                 }
                 view().w(u(380.)).child(t).into_element()
             };
-            let variants = view().w(u(380.)).gap(u(14.)).children([(true, false), (false, false), (true, true), (false, true)].into_iter().map(|(v, dis)| {
-                toggle_switch(v).header(format!("{}{}", if v { "on" } else { "off" }, if dis { ", disabled" } else { "" })).disabled(dis)
-            }));
+            let variants = view().w(u(380.)).gap(u(14.)).children(
+                [(true, false), (false, false), (true, true), (false, true)].into_iter().map(|(v, dis)| {
+                    toggle_switch(v)
+                        .header(format!("{}{}", if v { "on" } else { "off" }, if dis { ", disabled" } else { "" }))
+                        .disabled(dis)
+                }),
+            );
             pg(
                 preview,
                 vec![
@@ -617,10 +696,19 @@ fn build(page: Page) -> Playground {
                 }
                 c.into_element()
             };
-            let variants = view().gap(u(4.)).children([(true, false), (false, false), (true, true), (false, true)].into_iter().map(|(v, dis)| {
-                check_box(v).label(format!("{}{}", if v { "checked" } else { "unchecked" }, if dis { ", disabled" } else { "" })).disabled(dis)
-            }));
-            pg(preview, vec![flag("checked", checked), words("label", caption), flag("disabled", disabled)]).variants(variants)
+            let variants = view().gap(u(4.)).children(
+                [(true, false), (false, false), (true, true), (false, true)].into_iter().map(|(v, dis)| {
+                    check_box(v)
+                        .label(format!(
+                            "{}{}",
+                            if v { "checked" } else { "unchecked" },
+                            if dis { ", disabled" } else { "" }
+                        ))
+                        .disabled(dis)
+                }),
+            );
+            pg(preview, vec![flag("checked", checked), words("label", caption), flag("disabled", disabled)])
+                .variants(variants)
         }
         Page::RadioButton => {
             let sel = signal(0usize);
@@ -636,11 +724,26 @@ fn build(page: Page) -> Playground {
                     }))
                     .into_element()
             };
-            let variants = view().gap(u(4.)).children([(true, false), (false, false), (true, true), (false, true)].into_iter().map(|(v, dis)| {
-                radio_button(v).label(format!("{}{}", if v { "selected" } else { "not selected" }, if dis { ", disabled" } else { "" })).disabled(dis)
-            }));
-            pg(preview, vec![number("options", count, 1., 6., 1.), choice("selected", &["0", "1", "2", "3", "4", "5"], sel), flag("disabled", disabled)])
-                .variants(variants)
+            let variants = view().gap(u(4.)).children(
+                [(true, false), (false, false), (true, true), (false, true)].into_iter().map(|(v, dis)| {
+                    radio_button(v)
+                        .label(format!(
+                            "{}{}",
+                            if v { "selected" } else { "not selected" },
+                            if dis { ", disabled" } else { "" }
+                        ))
+                        .disabled(dis)
+                }),
+            );
+            pg(
+                preview,
+                vec![
+                    number("options", count, 1., 6., 1.),
+                    choice("selected", &["0", "1", "2", "3", "4", "5"], sel),
+                    flag("disabled", disabled),
+                ],
+            )
+            .variants(variants)
         }
         Page::Slider => {
             let v = signal(0.4f32);
@@ -661,7 +764,11 @@ fn build(page: Page) -> Playground {
                     .w(u(380.))
                     .gap(u(6.))
                     .child(s)
-                    .child(label(move || format!("value {:.2}", v.get())).text_size(u(size::SMALL)).text_color(move || palette().subtle))
+                    .child(
+                        label(move || format!("value {:.2}", v.get()))
+                            .text_size(u(size::SMALL))
+                            .text_color(move || palette().subtle),
+                    )
                     .into_element()
             };
             pg(
@@ -679,10 +786,10 @@ fn build(page: Page) -> Playground {
             let n = signal(4f32);
             let sel = signal(0usize);
             let header = signal("ringtone".to_string());
-            const ITEMS: [&str; 6] = ["chimes", "bells", "ripple", "xylophone", "marimba", "nothing"];
             let preview = move || {
                 let k = n.get() as usize;
-                let mut p = list_picker(ITEMS[..k].iter().copied(), move || sel.get().min(k - 1)).on_select(move |i| sel.set(i));
+                let mut p = list_picker(ITEMS[..k].iter().copied(), move || sel.get().min(k - 1))
+                    .on_select(move |i| sel.set(i));
                 let h = header.get();
                 if !h.is_empty() {
                     p = p.header(h);
@@ -710,10 +817,22 @@ fn build(page: Page) -> Playground {
                     .w(u(380.))
                     .gap(u(8.))
                     .child(t)
-                    .child(label(move || format!("submitted: {}", submitted.get())).text_size(u(size::SMALL)).text_color(move || palette().subtle))
+                    .child(
+                        label(move || format!("submitted: {}", submitted.get()))
+                            .text_size(u(size::SMALL))
+                            .text_color(move || palette().subtle),
+                    )
                     .into_element()
             };
-            pg(preview, vec![words("header", header), words("placeholder", placeholder), flag("password", masked), words("value", value)])
+            pg(
+                preview,
+                vec![
+                    words("header", header),
+                    words("placeholder", placeholder),
+                    flag("password", masked),
+                    words("value", value),
+                ],
+            )
         }
         Page::ProgressBar | Page::ProgressDots | Page::ProgressRing => {
             let kind = signal(match page {
@@ -735,10 +854,19 @@ fn build(page: Page) -> Playground {
                 .child(tagged("bar 60%", progress_bar(0.6)))
                 .child(tagged("bar 100%", progress_bar(1.)))
                 .child(tagged("dots", progress_dots()))
-                .child(row().child(tagged("ring 24", progress_ring().diameter(24.))).child(tagged("ring 40", progress_ring())).child(tagged("ring 64", progress_ring().diameter(64.))));
+                .child(
+                    row()
+                        .child(tagged("ring 24", progress_ring().diameter(24.)))
+                        .child(tagged("ring 40", progress_ring()))
+                        .child(tagged("ring 64", progress_ring().diameter(64.))),
+                );
             pg(
                 preview,
-                vec![choice("kind", &["bar", "dots", "ring"], kind), number("bar value", v, 0., 1., 0.01), number("ring diameter", d, 16., 128., 1.)],
+                vec![
+                    choice("kind", &["bar", "dots", "ring"], kind),
+                    number("bar value", v, 0., 1., 0.01),
+                    number("ring diameter", d, 16., 128., 1.),
+                ],
             )
             .variants(variants)
         }
@@ -766,7 +894,11 @@ fn build(page: Page) -> Playground {
                 match leading.get() {
                     1 => it = it.leading_icon(Icon::People),
                     2 => it = it.leading(Leading::Glyph("bt".into())),
-                    3 => it = it.leading(Leading::Element(view().size(u(30.)).rounded(px(15.)).bg(rgb(0xFFFFFF)).into_element())),
+                    3 => {
+                        it = it.leading(Leading::Element(
+                            view().size(u(30.)).rounded(px(15.)).bg(rgb(0xFFFFFF)).into_element(),
+                        ));
+                    }
                     _ => {}
                 }
                 if let Some(c) = accent_of(color.get()) {
@@ -782,7 +914,11 @@ fn build(page: Page) -> Playground {
                     .w(u(420.))
                     .gap(u(6.))
                     .child(it)
-                    .child(label(move || format!("{} taps", taps.get())).text_size(u(size::SMALL)).text_color(move || palette().subtle))
+                    .child(
+                        label(move || format!("{} taps", taps.get()))
+                            .text_size(u(size::SMALL))
+                            .text_color(move || palette().subtle),
+                    )
                     .into_element()
             };
             pg(
@@ -806,7 +942,10 @@ fn build(page: Page) -> Playground {
                 let k = groups.get() as usize;
                 let letters = ["a", "b", "c", "f", "k", "m", "s", "t", "w", "z"];
                 let mut j = jump_list().groups(letters[..k].iter().map(|l| {
-                    ListGroup::new(*l, (0..3).map(|i| list_item(format!("{l}{i} contact")).subtitle("mobile").into_element()))
+                    ListGroup::new(
+                        *l,
+                        (0..3).map(|i| list_item(format!("{l}{i} contact")).subtitle("mobile").into_element()),
+                    )
                 }));
                 if all_keys.get() {
                     j = j.keys(nsh_metro::ALPHABET);
@@ -838,7 +977,10 @@ fn build(page: Page) -> Playground {
                 view()
                     .size_full()
                     .child(shown)
-                    .child(when(move || open.get(), move || m.borrow_mut().take().map(IntoElement::into_element).unwrap_or_else(|| view().into_element())))
+                    .child(when(
+                        move || open.get(),
+                        move || m.borrow_mut().take().map_or_else(|| view().into_element(), IntoElement::into_element),
+                    ))
                     .into_element()
             };
             pg(
@@ -868,7 +1010,11 @@ fn build(page: Page) -> Playground {
                 view()
                     .gap(u(8.))
                     .child(nsh_metro::with_context_menu(list_item("right-click me").subtitle("or press and hold"), m))
-                    .child(label(move || format!("chose: {}", last.get())).text_size(u(size::SMALL)).text_color(move || palette().subtle))
+                    .child(
+                        label(move || format!("chose: {}", last.get()))
+                            .text_size(u(size::SMALL))
+                            .text_color(move || palette().subtle),
+                    )
                     .into_element()
             };
             pg(preview, vec![number("commands", n, 1., 5., 1.), flag("disabled command", disabled)])
@@ -896,7 +1042,16 @@ fn build(page: Page) -> Playground {
                     .child(t)
                     .into_element()
             };
-            pg(preview, vec![words("title", title), words("message", message), flag("icon", has_icon), choice("glyph", &ICONS, ic)]).height(220.)
+            pg(
+                preview,
+                vec![
+                    words("title", title),
+                    words("message", message),
+                    flag("icon", has_icon),
+                    choice("glyph", &ICONS, ic),
+                ],
+            )
+            .height(220.)
         }
         Page::SettingsFlyout => {
             let open = signal(true);
@@ -968,14 +1123,31 @@ fn build(page: Page) -> Playground {
             let preview = move || {
                 again.get();
                 let d = if dir.get() == 0 { Direction::Forward } else { Direction::Backward };
-                let card = || view().w(u(260.)).h(u(120.)).bg(move || palette().accent).p(u(12.)).child(label("metro").text_size(u(size::LARGE)).text_color(rgb(0xFFFFFF)));
+                let card = || {
+                    view()
+                        .w(u(260.))
+                        .h(u(120.))
+                        .bg(move || palette().accent)
+                        .p(u(12.))
+                        .child(label("metro").text_size(u(size::LARGE)).text_color(rgb(0xFFFFFF)))
+                };
                 let el = match kind.get() {
                     0 => turnstile_in(d, 0., 20., card()).into_element(),
-                    1 => view().gap(u(8.)).children((0..4).map(|i| turnstile_in(d, i as f32 * nsh_metro::motion::FEATHER, 20., card().h(u(40.))))).into_element(),
+                    1 => view()
+                        .gap(u(8.))
+                        .children(
+                            (0..4)
+                                .map(|i| turnstile_in(d, i as f32 * nsh_metro::motion::FEATHER, 20., card().h(u(40.)))),
+                        )
+                        .into_element(),
                     2 => swivel_in(card()).into_element(),
                     _ => tilt(card().cursor_pointer().on_press(|| {})).into_element(),
                 };
-                view().gap(u(12.)).child(button("play again").on_click(move || again.update(|n| *n += 1))).child(el).into_element()
+                view()
+                    .gap(u(12.))
+                    .child(button("play again").on_click(move || again.update(|n| *n += 1)))
+                    .child(el)
+                    .into_element()
             };
             pg(
                 preview,
@@ -993,3 +1165,23 @@ fn build(page: Page) -> Playground {
 fn _font() -> SharedString {
     FONT_FAMILY()
 }
+
+const STYLES: [&str; 11] = [
+    "title 1",
+    "title 2",
+    "title 3",
+    "extra large",
+    "large",
+    "normal",
+    "subtle",
+    "accent",
+    "small",
+    "app title",
+    "group header",
+];
+
+const SIZES: [&str; 4] = ["small", "medium", "wide", "large"];
+
+const NAMES: [&str; 6] = ["inbox", "unread", "flagged", "urgent", "sent", "drafts"];
+
+const ITEMS: [&str; 6] = ["chimes", "bells", "ripple", "xylophone", "marimba", "nothing"];

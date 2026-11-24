@@ -51,23 +51,20 @@ pub fn header_page() -> AnyElement {
         .into_element()
 }
 
-const ROWS: [(&str, &str, Icon); 2] = [("mail", "4 unread", Icon::Mail), ("calendar", "dentist at 3:30", Icon::Calendar)];
+const ROWS: [(&str, &str, Icon); 2] =
+    [("mail", "4 unread", Icon::Mail), ("calendar", "dentist at 3:30", Icon::Calendar)];
 
 /// One original Metro motion: its name, what it is for, and the specimen.
 fn motion_row(name: &'static str, use_: &'static str, specimen: impl IntoElement) -> View {
-    view()
-        .gap(u(8.))
-        .child(text(TextStyle::GroupHeader, name))
-        .child(caption(use_))
-        .child(
-            view()
-                .relative()
-                .h(u(150.))
-                .overflow_hidden()
-                .border_1()
-                .border_color(move || palette().disabled.opacity(0.5))
-                .child(specimen),
-        )
+    view().gap(u(8.)).child(text(TextStyle::GroupHeader, name)).child(caption(use_)).child(
+        view()
+            .relative()
+            .h(u(150.))
+            .overflow_hidden()
+            .border_1()
+            .border_color(move || palette().disabled.opacity(0.5))
+            .child(specimen),
+    )
 }
 
 /// A specimen built again (so replayed) on every beat of the motion loop.
@@ -97,12 +94,7 @@ fn inbox() -> AnyElement {
 /// Metro's own motions, and nothing else: each plays on its own, on a loop.
 pub fn motion_page(s: DemoState) -> AnyElement {
     let turnstile = || turnstile_in(Direction::Forward, 0., 0., view().size_full().child(inbox()).child(rows(false)));
-    let feather = || {
-        view()
-            .size_full()
-            .child(turnstile_in(Direction::Forward, 0., 0., inbox()))
-            .child(rows(true))
-    };
+    let feather = || view().size_full().child(turnstile_in(Direction::Forward, 0., 0., inbox())).child(rows(true));
     let swivel = || {
         swivel_in(
             view()
@@ -122,17 +114,25 @@ pub fn motion_page(s: DemoState) -> AnyElement {
         pane
     };
     let tilt = view()
-            .flex_row()
-            .gap(u(12.))
-            .p(u(12.))
-            .child(tile("m-tilt-tile", TileSize::Medium).icon(Icon::Mail).title("mail").on_click(|| {}))
-            .child(round_button(Icon::Add).on_click(|| {}));
+        .flex_row()
+        .gap(u(12.))
+        .p(u(12.))
+        .child(tile("m-tilt-tile", TileSize::Medium).icon(Icon::Mail).title("mail").on_click(|| {}))
+        .child(round_button(Icon::Add).on_click(|| {}));
 
     page(
         "motion",
         stack()
-            .child(motion_row("turnstile", "pages, on navigation: the page swings in about the left edge", looping(s, turnstile)))
-            .child(motion_row("turnstile feather", "list pages: the header, then each item, swing in", looping(s, feather)))
+            .child(motion_row(
+                "turnstile",
+                "pages, on navigation: the page swings in about the left edge",
+                looping(s, turnstile),
+            ))
+            .child(motion_row(
+                "turnstile feather",
+                "list pages: the header, then each item, swing in",
+                looping(s, feather),
+            ))
             .child(motion_row("swivel", "message boxes and toasts swing in about their middle", looping(s, swivel)))
             .child(motion_row("slide", "pivot items: the pane slides in from the side", looping(s, slide)))
             .child(motion_row("tilt", "press and hold: the element sinks under the pointer", tilt)),

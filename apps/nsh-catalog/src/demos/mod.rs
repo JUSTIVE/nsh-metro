@@ -133,13 +133,13 @@ impl DemoState {
         };
         // The motion page's specimens replay on their own, on a loop.
         let motion_loop = s.motion_loop;
-        let _ = set_interval(MOTION_LOOP, move || motion_loop.update(|n| *n += 1));
+        let _motion_timer = set_interval(MOTION_LOOP, move || motion_loop.update(|n| *n += 1));
         // A toast leaves on its own; a newer one restarts the clock (the
         // effect's re-run drops the old timer).
         let toast = s.toast;
         effect(move || {
             if let Some(n) = toast.get() {
-                let _ = set_timeout(overlays::TOAST_FOR, move || {
+                let _dismiss = set_timeout(overlays::TOAST_FOR, move || {
                     if toast.get_untracked() == Some(n) {
                         toast.set(None);
                     }

@@ -51,7 +51,10 @@ impl MessageBox {
 impl IntoElement for MessageBox {
     fn into_element(self) -> AnyElement {
         let fg = move || palette().foreground;
-        let buttons = self.buttons.into_iter().map(|(label, f)| view().flex_1().child(button(label).full_width().on_click(move || f())));
+        let buttons = self
+            .buttons
+            .into_iter()
+            .map(|(label, f)| view().flex_1().child(button(label).full_width().on_click(move || f())));
         let band = view()
             .w_full()
             .bg(move || palette().chrome)
@@ -61,7 +64,13 @@ impl IntoElement for MessageBox {
             .gap(u(14.))
             // Taps on the band stay on the band.
             .on_press(|| {})
-            .child(label(self.title).font_family(FONT_FAMILY).text_size(u(size::LARGE)).font_weight(SEMIBOLD).text_color(fg))
+            .child(
+                label(self.title)
+                    .font_family(FONT_FAMILY)
+                    .text_size(u(size::LARGE))
+                    .font_weight(SEMIBOLD)
+                    .text_color(fg),
+            )
             .children(self.message.map(|m| label(m).font_family(FONT_FAMILY).text_size(u(size::MEDIUM)).text_color(fg)))
             .children(self.content)
             .child(view().flex_row().gap(u(12.)).pt(u(8.)).children(buttons));
@@ -112,9 +121,21 @@ impl IntoElement for Toast {
             .h(u(60.))
             .bg(move || palette().accent)
             .children(self.icon.map(|i| i.render(22., ink)))
-            .child(label(self.title).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).font_weight(SEMIBOLD).text_color(ink))
+            .child(
+                label(self.title)
+                    .font_family(FONT_FAMILY)
+                    .text_size(u(size::NORMAL))
+                    .font_weight(SEMIBOLD)
+                    .text_color(ink),
+            )
             .children(self.message.map(|m| {
-                label(m).flex_1().min_w(px(0.)).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).truncate().text_color(ink)
+                label(m)
+                    .flex_1()
+                    .min_w(px(0.))
+                    .font_family(FONT_FAMILY)
+                    .text_size(u(size::NORMAL))
+                    .truncate()
+                    .text_color(ink)
             }));
         let band = match self.on_click {
             Some(f) => band.cursor_pointer().on_press(move || f()),

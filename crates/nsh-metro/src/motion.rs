@@ -12,11 +12,14 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use nsh_core::prelude::*;
-use nsh_core::{TransformKind, element::{AnimationEnd, TransformOrigin}};
+use nsh_core::{
+    TransformKind,
+    element::{AnimationEnd, TransformOrigin},
+};
 
 use crate::theme::reduced_motion;
 
-/// Silverlight's `ExponentialEase` (EaseOut, exponent 6), the curve of every
+/// Silverlight's `ExponentialEase` (`EaseOut`, exponent 6), the curve of every
 /// WP Toolkit transition, as a cubic Bézier (within 1% of the exponential).
 pub const EXP6_OUT: Easing = Easing::Bezier(0.15, 0.95, 0.4, 1.0);
 /// The ease-in counterpart, for elements leaving.
@@ -27,12 +30,12 @@ pub const IN_OUT_CUBIC: Easing = Easing::Curve(Curve::Cubic, EaseMode::InOut);
 /// Frame rate for ambient motion: what runs on its own (live tile peeks,
 /// progress indicators) rather than in answer to the user. nsh runs an
 /// animation at the screen's top rate unless told otherwise (120 Hz on a
-/// ProMotion display); Windows Phone drew this at 60, and so did
+/// `ProMotion` display); Windows Phone drew this at 60, and so did
 /// gpui-metro. Transitions the user starts keep the screen's rate.
 pub const AMBIENT_FPS: f32 = 60.;
 
 thread_local! {
-    static AMBIENT: std::cell::Cell<Option<f32>> = const { std::cell::Cell::new(Some(AMBIENT_FPS)) };
+    static AMBIENT: Cell<Option<f32>> = const { Cell::new(Some(AMBIENT_FPS)) };
 }
 
 /// Sets the frame rate of ambient motion: `Some(fps)` caps it there, `None`
@@ -48,7 +51,7 @@ pub fn set_ambient_fps(fps: Option<f32>) {
 /// ([`set_ambient_fps`], [`AMBIENT_FPS`] unless set).
 pub fn ambient(ms: f32, easing: Easing) -> Timing {
     let timing = Timing::new(ms, easing);
-    match AMBIENT.with(|a| a.get()) {
+    match AMBIENT.with(Cell::get) {
         Some(fps) => timing.frame_rate(fps),
         None => timing,
     }
@@ -110,7 +113,7 @@ impl Direction {
 /// A transform origin `hinge` px to the left of a view's left edge, at its
 /// vertical middle: where the turnstile turns about.
 pub fn hinge_origin(hinge: f32) -> TransformOrigin {
-    TransformOrigin { x: px(-hinge).into(), y: relative(0.5).into(), z: Points::ZERO }
+    TransformOrigin { x: px(-hinge).into(), y: relative(0.5), z: Points::ZERO }
 }
 
 /// `child` turned about a vertical axis `hinge` px left of it by `angle`
@@ -139,7 +142,8 @@ pub const EDGE_ON_FADE: f32 = 78.;
 pub fn turnstile_in(direction: Direction, delay: f32, hinge: f32, child: impl IntoElement) -> View {
     let angle = animated_value(if reduced_motion() { 0. } else { direction.enter_from() });
     if !reduced_motion() {
-        let anim = Animation::sequence([Animation::delay(delay), Animation::timing(&angle, 0., Timing::new(ENTER, EXP6_OUT))]);
+        let anim =
+            Animation::sequence([Animation::delay(delay), Animation::timing(&angle, 0., Timing::new(ENTER, EXP6_OUT))]);
         let _ = anim.start();
     }
     turned(&angle, hinge, child)
@@ -166,8 +170,11 @@ pub fn swing_out(angle: &AnimatedValue, direction: Direction, delay: f32) -> Ani
     if reduced_motion() {
         return angle.timing(direction.exit_to(), 0., Easing::Linear);
     }
-    Animation::sequence([Animation::delay(delay), Animation::timing(angle, direction.exit_to(), Timing::new(EXIT, EXP6_IN))])
-        .start()
+    Animation::sequence([
+        Animation::delay(delay),
+        Animation::timing(angle, direction.exit_to(), Timing::new(EXIT, EXP6_IN)),
+    ])
+    .start()
 }
 
 /// How long a pivot pane takes to slide in, in ms.
@@ -299,11 +306,11 @@ mod tests {
         let bez = |x: f32| {
             let (mut lo, mut hi) = (0f32, 1f32);
             for _ in 0..40 {
-                let t = (lo + hi) / 2.;
+                let t = f32::midpoint(lo, hi);
                 let bx = 3. * (1. - t).powi(2) * t * x1 + 3. * (1. - t) * t * t * x2 + t.powi(3);
                 if bx < x { lo = t } else { hi = t }
             }
-            let t = (lo + hi) / 2.;
+            let t = f32::midpoint(lo, hi);
             3. * (1. - t).powi(2) * t * y1 + 3. * (1. - t) * t * t * y2 + t.powi(3)
         };
         for i in 0..=20 {

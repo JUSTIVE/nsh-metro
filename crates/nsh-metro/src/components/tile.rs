@@ -74,6 +74,12 @@ pub const TILE_GAP: f32 = 12.;
 /// of 2×2 blocks; medium and larger tiles align to block corners, and small
 /// tiles fill a block's quadrants before moving to the next block. First
 /// fit, in order. Returns `(column, row)` per tile, in grid units.
+///
+/// # Panics
+///
+/// Never: the search runs down rows without end, and a row past the last
+/// placed tile is empty, so every tile finds a place (`columns` is raised
+/// to the widest tile first).
 pub fn pack(sizes: &[TileSize], columns: usize) -> Vec<(usize, usize)> {
     let widest = sizes.iter().map(|s| s.span().0).max().unwrap_or(1);
     let columns = columns.max(widest).max(2);
@@ -168,7 +174,7 @@ pub fn on_beat(period: f32, phase: f32, slide: f32, beat: f32) -> (f32, f32) {
 /// animates and the link stops. Slides are timed from the cycle's start, so
 /// tiles on a beat stay on it however long they run.
 fn peek(y: AnimatedValue, h: f32, period: f32, phase: f32) {
-    let (period, t) = match BEAT.with(|b| b.get()) {
+    let (period, t) = match BEAT.with(std::cell::Cell::get) {
         Some(beat) => {
             let (p, ph) = on_beat(period, phase, PEEK_SLIDE_SECS, beat);
             let since = EPOCH.with(|e| e.elapsed().as_secs_f32());
@@ -180,7 +186,7 @@ fn peek(y: AnimatedValue, h: f32, period: f32, phase: f32) {
     let slide_ms = slide * period * 1000.;
     // The cycle began `t` of a period ago; its slides start at these
     // fractions of it.
-    let origin = Instant::now() - std::time::Duration::from_secs_f32(t * period);
+    let origin = Instant::now().checked_sub(std::time::Duration::from_secs_f32(t * period)).unwrap();
     let (up_at, down_at) = (0.5 - slide, 1. - slide);
     // Where the cycle is now: the face it rests on (or the end of the slide
     // it is in), and which slide comes next, in which cycle.
@@ -324,14 +330,8 @@ impl IntoElement for Tile {
         let ink = move || palette().accent_ink;
         let title = self.title.clone();
         let face = move |content: AnyElement| {
-            view()
-                .relative()
-                .w(u(w))
-                .h(u(h))
-                .flex_shrink_0()
-                .overflow_hidden()
-                .child(content)
-                .children(title.clone().map(|t| {
+            view().relative().w(u(w)).h(u(h)).flex_shrink_0().overflow_hidden().child(content).children(
+                title.clone().map(|t| {
                     label(t)
                         .absolute()
                         .left(u(8.))
@@ -339,7 +339,8 @@ impl IntoElement for Tile {
                         .font_family(FONT_FAMILY)
                         .text_size(u(size::SMALL))
                         .text_color(ink)
-                }))
+                }),
+            )
         };
         let (icon, count) = (self.icon, self.count);
         let front = match self.front {
@@ -411,6 +412,8 @@ const COUNT_GAP: f32 = 8.;
 /// How far the count slides in from as it fades in.
 const COUNT_SLIDE: f32 = 14.;
 
+// The two layouts read as cases of the size, small and the rest.
+#[allow(clippy::single_match_else)]
 fn default_front(size: TileSize, icon: Option<Icon>, count: Option<Reactive<u32>>) -> AnyElement {
     let ink = move || palette().accent_ink;
     let icon_px = match size {
@@ -627,7 +630,7 @@ impl TileGrid {
         self
     }
     pub fn tiles(self, tiles: impl IntoIterator<Item = Tile>) -> Self {
-        tiles.into_iter().fold(self, |g, t| g.tile(t))
+        tiles.into_iter().fold(self, TileGrid::tile)
     }
     /// Starts a new named group to the right of the previous one.
     pub fn group(mut self, title: impl Into<SharedString>, tiles: impl IntoIterator<Item = Tile>) -> Self {
@@ -782,7 +785,10 @@ impl IntoElement for TileGrid {
                     a.set(ENTER_FROM_DEG);
                 }
                 Animation::parallel(angles.iter().zip(&delays).map(|(a, &d)| {
-                    Animation::sequence([Animation::delay(d), Animation::timing(a, 0., Timing::new(motion::ENTER, EXP6_OUT))])
+                    Animation::sequence([
+                        Animation::delay(d),
+                        Animation::timing(a, 0., Timing::new(motion::ENTER, EXP6_OUT)),
+                    ])
                 }))
                 .start()
             }
@@ -792,7 +798,10 @@ impl IntoElement for TileGrid {
             move |tapped: usize| {
                 let (delays, _) = exit_schedule(&positions, tapped);
                 Animation::parallel(angles.iter().zip(&delays).map(|(a, &d)| {
-                    Animation::sequence([Animation::delay(d), Animation::timing(a, 90., Timing::new(EXIT_TILE, EXP6_IN))])
+                    Animation::sequence([
+                        Animation::delay(d),
+                        Animation::timing(a, 90., Timing::new(EXIT_TILE, EXP6_IN)),
+                    ])
                 }))
                 .start()
             }
@@ -807,7 +816,7 @@ impl IntoElement for TileGrid {
                 effect(move || {
                     replay.get();
                     if !std::mem::replace(&mut *first.borrow_mut(), false) {
-                        let _ = untracked(|| enter());
+                        let _ = untracked(&enter);
                     }
                 });
             }
@@ -861,14 +870,7 @@ impl IntoElement for TileGrid {
             })
             .collect();
 
-        view()
-            .relative()
-            .flex_shrink_0()
-            .w(u(width))
-            .h(u(height))
-            .children(headers)
-            .children(tiles)
-            .into_element()
+        view().relative().flex_shrink_0().w(u(width)).h(u(height)).children(headers).children(tiles).into_element()
     }
 }
 
@@ -924,7 +926,10 @@ fn slots_enter(slots: &Slots, keys: &[SharedString]) {
         t.angle.set(ENTER_FROM_DEG);
     }
     let _ = Animation::parallel(tiles.iter().zip(&delays).map(|(t, &d)| {
-        Animation::sequence([Animation::delay(d), Animation::timing(&t.angle, 0., Timing::new(motion::ENTER, EXP6_OUT))])
+        Animation::sequence([
+            Animation::delay(d),
+            Animation::timing(&t.angle, 0., Timing::new(motion::ENTER, EXP6_OUT)),
+        ])
     }))
     .start();
 }
@@ -984,61 +989,58 @@ impl TileGrid {
                         let to = (c as f32 * step, r as f32 * step);
                         let key = t.key.clone();
                         new_keys.push(key.clone());
-                        match slots.get_mut(&key) {
-                            Some(slot) => {
-                                slot.cell = (c, r);
-                                if slot.at != to {
-                                    slot.at = to;
-                                    moved.push((key, to, r));
-                                    origin = origin.min(r);
-                                }
+                        if let Some(slot) = slots.get_mut(&key) {
+                            slot.cell = (c, r);
+                            if slot.at != to {
+                                slot.at = to;
+                                moved.push((key, to, r));
+                                origin = origin.min(r);
                             }
-                            None => {
-                                let arriving = !first && !reduced;
-                                let start = if first && turnstile { ENTER_FROM_DEG } else { 0. };
-                                let (angle, arrive, x, y) = owner.run(|| {
-                                    (
-                                        animated_value(start),
-                                        animated_value(if arriving { ARRIVE_FROM_DEG } else { 0. }),
-                                        animated_value(to.0),
-                                        animated_value(to.1),
-                                    )
-                                });
-                                // On a turnstile grid a tap swings the tiles
-                                // away first, the tapped one last.
-                                let mut t = t;
-                                if turnstile && let Some(launch) = t.on_click.take() {
-                                    let (slots_c, busy, tap) = (slots_c.clone(), busy.clone(), on_tap.clone());
-                                    let me = key.clone();
-                                    t.on_click = Some(Rc::new(move || {
-                                        if busy.replace(true) {
-                                            return;
-                                        }
-                                        if let Some(tap) = &tap {
-                                            tap();
-                                        }
-                                        let order = keys.get_untracked();
-                                        let ix = order.iter().position(|k| *k == me).unwrap_or(usize::MAX);
-                                        let end = slots_exit(&slots_c, &order, ix);
-                                        let (launch, busy) = (launch.clone(), busy.clone());
-                                        spawn(async move {
-                                            end.await;
-                                            busy.set(false);
-                                            launch();
-                                        });
-                                    }));
-                                }
-                                if arriving {
-                                    origin = origin.min(r);
-                                    let _ = Animation::sequence([
-                                        Animation::delay(ARRIVE_AFTER),
-                                        Animation::timing(&arrive, 0., Timing::new(ARRIVE, EXP6_OUT)),
-                                    ])
-                                    .start();
-                                }
-                                let slot = Slot { x, y, angle, arrive, at: to, cell: (c, r), tile: Some(t) };
-                                slots.insert(key, slot);
+                        } else {
+                            let arriving = !first && !reduced;
+                            let start = if first && turnstile { ENTER_FROM_DEG } else { 0. };
+                            let (angle, arrive, x, y) = owner.run(|| {
+                                (
+                                    animated_value(start),
+                                    animated_value(if arriving { ARRIVE_FROM_DEG } else { 0. }),
+                                    animated_value(to.0),
+                                    animated_value(to.1),
+                                )
+                            });
+                            // On a turnstile grid a tap swings the tiles
+                            // away first, the tapped one last.
+                            let mut t = t;
+                            if turnstile && let Some(launch) = t.on_click.take() {
+                                let (slots_c, busy, tap) = (slots_c.clone(), busy.clone(), on_tap.clone());
+                                let me = key.clone();
+                                t.on_click = Some(Rc::new(move || {
+                                    if busy.replace(true) {
+                                        return;
+                                    }
+                                    if let Some(tap) = &tap {
+                                        tap();
+                                    }
+                                    let order = keys.get_untracked();
+                                    let ix = order.iter().position(|k| *k == me).unwrap_or(usize::MAX);
+                                    let end = slots_exit(&slots_c, &order, ix);
+                                    let (launch, busy) = (launch.clone(), busy.clone());
+                                    spawn(async move {
+                                        end.await;
+                                        busy.set(false);
+                                        launch();
+                                    });
+                                }));
                             }
+                            if arriving {
+                                origin = origin.min(r);
+                                let _ = Animation::sequence([
+                                    Animation::delay(ARRIVE_AFTER),
+                                    Animation::timing(&arrive, 0., Timing::new(ARRIVE, EXP6_OUT)),
+                                ])
+                                .start();
+                            }
+                            let slot = Slot { x, y, angle, arrive, at: to, cell: (c, r), tile: Some(t) };
+                            slots.insert(key, slot);
                         }
                     }
                     let rows: Vec<usize> = moved.iter().map(|m| m.2).collect();

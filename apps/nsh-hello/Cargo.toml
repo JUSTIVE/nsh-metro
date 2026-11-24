@@ -5,8 +5,10 @@ version.workspace = true
 license.workspace = true
 publish = false
 
+[lints]
+workspace = true
+
 [dependencies]
 nsh-core.workspace = true
-nsh-base.workspace = true
 nsh-platform-macos.workspace = true
 nsh-metro.workspace = true

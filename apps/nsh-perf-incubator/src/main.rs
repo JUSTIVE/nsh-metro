@@ -1,5 +1,5 @@
 //! The performance incubator, for nsh-metro: the same stress scenes as
-//! `apps/perf-incubator` in gpui-metro (https://github.com/JUSTIVE/gpui-metro),
+//! `apps/perf-incubator` in gpui-metro (<https://github.com/JUSTIVE/gpui-metro>),
 //! measured the same way, so the two
 //! ports can be compared scene by scene.
 //!
@@ -14,9 +14,15 @@
 //!
 //! CPU % is user + system time of this process over the window (100 % = one
 //! core). On nsh the platform composites and animates the layers, and on
-//! macOS that work lands partly in WindowServer, so the table also shows
-//! WindowServer's CPU over the same window (both incubators report it).
+//! macOS that work lands partly in `WindowServer`, so the table also shows
+//! `WindowServer`'s CPU over the same window (both incubators report it).
 
+// getrusage is the one way to read this process's own CPU time.
+#![allow(unsafe_code)]
+// A command-line tool: its table goes to stdout.
+#![allow(clippy::print_stdout)]
+
+use std::fmt::Write as _;
 use std::time::{Duration, Instant};
 
 use nsh_core::prelude::*;
@@ -85,12 +91,12 @@ impl Scene {
 fn cpu_seconds() -> f64 {
     // SAFETY: getrusage only writes into the struct we hand it.
     let mut u: libc::rusage = unsafe { std::mem::zeroed() };
-    unsafe { libc::getrusage(libc::RUSAGE_SELF, &mut u) };
-    let t = |v: libc::timeval| v.tv_sec as f64 + v.tv_usec as f64 / 1e6;
+    unsafe { libc::getrusage(libc::RUSAGE_SELF, &raw mut u) };
+    let t = |v: libc::timeval| v.tv_sec as f64 + f64::from(v.tv_usec) / 1e6;
     t(u.ru_utime) + t(u.ru_stime)
 }
 
-/// WindowServer's CPU seconds so far, from `ps` (0 if it can't be read).
+/// `WindowServer`'s CPU seconds so far, from `ps` (0 if it can't be read).
 fn window_server_seconds() -> f64 {
     let out = std::process::Command::new("ps").args(["-axco", "time=,comm="]).output();
     let Ok(out) = out else { return 0. };
@@ -158,7 +164,11 @@ fn back_face(i: usize) -> impl Fn(TileSize) -> AnyElement + 'static {
             .size_full()
             .p(u(8.))
             .child(nsh_core::prelude::text(format!("R-{}", 4700 + i)).text_size(u(big)).text_color(rgb(0xFFFFFF)))
-            .child(nsh_core::prelude::text(format!("OD {}.{} · log", i % 12, i % 10)).text_size(u(type_size::SMALL)).text_color(rgb(0xFFFFFF)))
+            .child(
+                nsh_core::prelude::text(format!("OD {}.{} · log", i % 12, i % 10))
+                    .text_size(u(type_size::SMALL))
+                    .text_color(rgb(0xFFFFFF)),
+            )
             .child(nsh_core::prelude::text("BR-2K · 2 L").text_size(u(type_size::SMALL)).text_color(rgb(0xFFFFFF)))
             .into_element()
     }
@@ -173,7 +183,10 @@ fn tiles(n: usize, live: bool, keyed: bool) -> AnyElement {
         if live {
             let t = t.period(9. + (i % 7) as f32).phase((i as f32 * 0.37).fract());
             if keyed {
-                t.back_text(format!("R-{}", 4700 + i), [format!("OD {}.{} · log", i % 12, i % 10), "BR-2K · 2 L".into()])
+                t.back_text(
+                    format!("R-{}", 4700 + i),
+                    [format!("OD {}.{} · log", i % 12, i % 10), "BR-2K · 2 L".into()],
+                )
             } else {
                 t.back(back_face(i))
             }
@@ -249,7 +262,7 @@ fn Lab() -> impl IntoElement {
                 let (c1, w1, dt) = (cpu_seconds(), window_server_seconds(), t0.elapsed().as_secs_f64());
                 let (cpu, ws) = ((c1 - c0) / dt * 100., (w1 - w0) / dt * 100.);
                 eprintln!("{:<22} {:>6.1} % CPU {:>6.1} % WindowServer", s.name(), cpu, ws);
-                table += &format!("| {} | {:.1} | {:.1} |\n", s.name(), cpu, ws);
+                let _ = writeln!(table, "| {} | {:.1} | {:.1} |", s.name(), cpu, ws);
             }
             println!("{table}");
             if let Some(path) = &o.out {

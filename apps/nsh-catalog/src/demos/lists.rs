@@ -1,7 +1,9 @@
 //! List item variants and the a–z contacts jump list.
 
 use nsh_core::prelude::*;
-use nsh_metro::{ALPHABET, Accent, Icon, Leading, ListGroup, jump_list, list_item, page_header, palette, progress_ring, u};
+use nsh_metro::{
+    ALPHABET, Accent, Icon, Leading, ListGroup, jump_list, list_item, page_header, palette, progress_ring, u,
+};
 
 use super::{DemoState, caption, page, stack};
 

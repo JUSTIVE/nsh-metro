@@ -9,8 +9,8 @@
 //! and `tick` (telemetry moved), so a page rebuilds only for the first and
 //! binds the second to the few properties that show live readings.
 
-use std::cell::RefCell;
 use nsh_metro::label;
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -315,7 +315,8 @@ fn dialog(app: App) -> AnyElement {
     let Some(dialog) = app.dialog.get() else { return view().into_element() };
     match dialog {
         Dialog::Harvest { run_id } => {
-            let Some((code, vessel, od)) = app.peek(|s| s.run(&run_id).map(|r| (r.code.clone(), r.vessel.clone(), r.od600)))
+            let Some((code, vessel, od)) =
+                app.peek(|s| s.run(&run_id).map(|r| (r.code.clone(), r.vessel.clone(), r.od600)))
             else {
                 return view().into_element();
             };
@@ -343,12 +344,12 @@ fn toast_host(app: App) -> AnyElement {
     let toast = app.toast;
     let kind = computed(move || toast.with(|t| t.as_ref().map(|t| t.kind)));
     let ink = move || palette().accent_ink;
-    let field = move |f: fn(&ActiveToast) -> String| move || toast.with(|t| t.as_ref().map(f).unwrap_or_default());
+    let field = move |f: fn(&ActiveToast) -> String| move || toast.with(|t| t.as_ref().map_or_default(f));
     dynamic(move || {
         if kind.get().is_none() {
             return view().into_element();
         }
-        let icon = toast.get_untracked().map(|t| t.icon).unwrap_or(Icon::Check);
+        let icon = toast.get_untracked().map_or(Icon::Check, |t| t.icon);
         let band = view()
             .w_full()
             .flex_row()
@@ -387,9 +388,11 @@ fn quick_settings(app: App) -> AnyElement {
         .width(FlyoutWidth::Narrow)
         .on_dismiss(move || app.flyout.set(false))
         .child(|| {
-            list_picker([Mode::Dark.label(), Mode::Light.label()], move || usize::from(Theme::get().mode == Mode::Light))
-                .header("background")
-                .on_select(|ix| Theme::set_mode(if ix == 0 { Mode::Dark } else { Mode::Light }))
+            list_picker([Mode::Dark.label(), Mode::Light.label()], move || {
+                usize::from(Theme::get().mode == Mode::Light)
+            })
+            .header("background")
+            .on_select(|ix| Theme::set_mode(if ix == 0 { Mode::Dark } else { Mode::Light }))
         })
         .child(|| {
             view()
@@ -399,9 +402,7 @@ fn quick_settings(app: App) -> AnyElement {
                 .child(text(TextStyle::Accent, || Theme::get().accent.name()))
         })
         .child(|| {
-            toggle_switch(|| Theme::get().reduced_motion)
-                .header("reduce motion")
-                .on_change(Theme::set_reduced_motion)
+            toggle_switch(|| Theme::get().reduced_motion).header("reduce motion").on_change(Theme::set_reduced_motion)
         })
         .child(move || {
             view().pt(u(8.)).child(nsh_metro::hyperlink("all settings").on_click(move || {

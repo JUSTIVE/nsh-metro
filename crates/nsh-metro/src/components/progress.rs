@@ -5,8 +5,8 @@
 //! every dot maps the clock through its own (sampled) path, so the whole
 //! indicator runs natively and is never rebuilt.
 
-use nsh_core::prelude::*;
 use nsh_core::TransformKind;
+use nsh_core::prelude::*;
 
 use crate::theme::{palette, u};
 
@@ -64,8 +64,8 @@ fn clock(ms: f32) -> AnimatedValue {
 
 impl IntoElement for ProgressBar {
     fn into_element(self) -> AnyElement {
-        match self.value {
-            Some(v) => view()
+        if let Some(v) = self.value {
+            view()
                 .relative()
                 .w_full()
                 .h(u(4.))
@@ -79,31 +79,30 @@ impl IntoElement for ProgressBar {
                         .w(move || relative(v.get().clamp(0., 1.)))
                         .bg(move || palette().accent),
                 )
-                .into_element(),
-            None => {
-                let t = clock(CYCLE_MS);
-                view()
-                    .relative()
-                    .w_full()
-                    .h(u(4.))
-                    .overflow_hidden()
-                    .children((0..DOTS).map(|i| {
-                        // A full-width track per dot, moved by a fraction of
-                        // its own width: the bar's.
-                        let (input, x) = sampled(160, |t| dot_position(i, t).unwrap_or(if t < 0.5 { 0. } else { 1.1 }));
-                        let (_, shown) = sampled(160, |t| if dot_position(i, t).is_some() { 1. } else { 0. });
-                        view()
-                            .absolute()
-                            .top_0()
-                            .left_0()
-                            .w_full()
-                            .h(u(4.))
-                            .bind_transform(TransformKind::TranslateXFraction, &t.interpolate(&input, &x))
-                            .bind_opacity(&t.interpolate(&input, &shown))
-                            .child(view().size(u(4.)).bg(move || palette().accent))
-                    }))
-                    .into_element()
-            }
+                .into_element()
+        } else {
+            let t = clock(CYCLE_MS);
+            view()
+                .relative()
+                .w_full()
+                .h(u(4.))
+                .overflow_hidden()
+                .children((0..DOTS).map(|i| {
+                    // A full-width track per dot, moved by a fraction of
+                    // its own width: the bar's.
+                    let (input, x) = sampled(160, |t| dot_position(i, t).unwrap_or(if t < 0.5 { 0. } else { 1.1 }));
+                    let (_, shown) = sampled(160, |t| if dot_position(i, t).is_some() { 1. } else { 0. });
+                    view()
+                        .absolute()
+                        .top_0()
+                        .left_0()
+                        .w_full()
+                        .h(u(4.))
+                        .bind_transform(TransformKind::TranslateXFraction, &t.interpolate(&input, &x))
+                        .bind_opacity(&t.interpolate(&input, &shown))
+                        .child(view().size(u(4.)).bg(move || palette().accent))
+                }))
+                .into_element()
         }
     }
 }

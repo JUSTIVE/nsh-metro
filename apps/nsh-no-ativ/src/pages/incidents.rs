@@ -3,14 +3,16 @@
 
 use nsh_core::prelude::*;
 use nsh_metro::{
-    Icon, ListItem, TextStyle, app_bar, button, check_box, list_item, list_picker, palette, pivot, text,
-    toggle_switch, u,
+    Icon, ListItem, TextStyle, app_bar, button, check_box, list_item, list_picker, palette, pivot, text, toggle_switch,
+    u,
 };
 
 use crate::app::App;
 use crate::data::{Incident, IncidentSeverity, IncidentStatus};
 use crate::nav::{AREAS, Dialog, Page, SEVERITIES};
-use crate::pages::{APP, PageView, alarm, fact, half, heading, missing, runs::run_item, scrolling, subtle, titled, warn};
+use crate::pages::{
+    APP, PageView, alarm, fact, half, heading, missing, runs::run_item, scrolling, subtle, titled, warn,
+};
 use crate::store::{IncidentDraft, StoreError};
 use crate::widgets::text_box;
 
@@ -46,7 +48,7 @@ fn pane(app: App, selected: usize) -> AnyElement {
 
 pub fn list(app: App, selected: usize) -> PageView {
     let sel = signal(selected);
-    let body = pivot(STATUSES.map(|s| s.as_str()), move || sel.get())
+    let body = pivot(STATUSES.map(IncidentStatus::as_str), move || sel.get())
         .title(APP)
         .on_select(move |ix| {
             sel.set(ix);
@@ -62,7 +64,11 @@ pub fn detail(app: App, id: &str) -> PageView {
     };
     let (instrument, lot, linked) = app.peek(|s| {
         (
-            incident.instrument_id.as_deref().and_then(|i| s.instrument(i)).map(|i| format!("{} · {}", i.code, i.state.as_str())),
+            incident
+                .instrument_id
+                .as_deref()
+                .and_then(|i| s.instrument(i))
+                .map(|i| format!("{} · {}", i.code, i.state.as_str())),
             incident.lot_id.as_deref().and_then(|l| s.lot(l)).map(|l| l.code.clone()),
             incident.run_id.as_deref().and_then(|r| s.run(r)).map(|run| run_item(app, run, s)),
         )
@@ -167,7 +173,7 @@ pub fn form(app: App, run_id: Option<String>) -> PageView {
     let form = Form {
         title: signal(String::new()),
         area: signal(0),
-        severity: signal(if run_id.is_some() { 1 } else { 0 }),
+        severity: signal(usize::from(run_id.is_some())),
         link_run: signal(run_id.is_some()),
         run: signal(run),
         quarantine: signal(false),
@@ -186,9 +192,13 @@ pub fn form(app: App, run_id: Option<String>) -> PageView {
     let fields = view()
         .gap(u(18.))
         .child(text_box(form.title, "title", "what happened?", app.editing))
-        .child(list_picker(AREAS.map(|a| a.as_str()), form.area).header("area").on_select(move |ix| form.area.set(ix)))
         .child(
-            list_picker(SEVERITIES.map(|s| s.as_str()), form.severity)
+            list_picker(AREAS.map(super::super::data::IncidentArea::as_str), form.area)
+                .header("area")
+                .on_select(move |ix| form.area.set(ix)),
+        )
+        .child(
+            list_picker(SEVERITIES.map(IncidentSeverity::as_str), form.severity)
                 .header("severity")
                 .on_select(move |ix| form.severity.set(ix)),
         )
@@ -201,20 +211,26 @@ pub fn form(app: App, run_id: Option<String>) -> PageView {
                         .disabled(no_runs)
                         .on_change(move |on| form.link_run.set(on)),
                 )
-                .child(when(move || form.link_run.get() && !no_runs, move || {
-                    list_picker(runs.clone(), form.run).on_select(move |ix| form.run.set(ix))
-                })),
+                .child(when(
+                    move || form.link_run.get() && !no_runs,
+                    move || list_picker(runs.clone(), form.run).on_select(move |ix| form.run.set(ix)),
+                )),
         )
         .child(
             view()
-                .child(check_box(form.quarantine).label("quarantine the area").on_change(move |on| form.quarantine.set(on)))
-                .child(check_box(form.page_lead).label("page the floor lead").on_change(move |on| form.page_lead.set(on))),
+                .child(
+                    check_box(form.quarantine)
+                        .label("quarantine the area")
+                        .on_change(move |on| form.quarantine.set(on)),
+                )
+                .child(
+                    check_box(form.page_lead).label("page the floor lead").on_change(move |on| form.page_lead.set(on)),
+                ),
         )
         .child(button("save").accent().full_width().on_click(save_now.clone()));
 
-    PageView::new(titled("incidents", "new incident", scrolling(fields))).app_bar(
-        app_bar().button(Icon::Save, "save", save_now).button(Icon::Close, "cancel", move || app.pop()),
-    )
+    PageView::new(titled("incidents", "new incident", scrolling(fields)))
+        .app_bar(app_bar().button(Icon::Save, "save", save_now).button(Icon::Close, "cancel", move || app.pop()))
 }
 
 #[cfg(test)]

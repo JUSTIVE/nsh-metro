@@ -1,7 +1,7 @@
 //! Small local stand-ins for what nsh-metro doesn't (yet) offer.
 
-use std::rc::Rc;
 use nsh_metro::label;
+use std::rc::Rc;
 
 use nsh_core::{element::input, prelude::*};
 use nsh_metro::{
@@ -78,9 +78,11 @@ pub fn live_back(size: TileSize, headline: Line, lines: Vec<Line>, bg: Option<Rc
             .line_height(nsh_core::LineHeight::Points(px(big + 4.)))
             .text_color(ink),
     )
-    .children(lines.into_iter().map(move |l| {
-        label(move || l()).font_family(FONT_FAMILY).text_size(u(size::SMALL)).truncate().text_color(ink)
-    }))
+    .children(
+        lines.into_iter().map(move |l| {
+            label(move || l()).font_family(FONT_FAMILY).text_size(u(size::SMALL)).truncate().text_color(ink)
+        }),
+    )
     .into_element()
 }
 
@@ -101,6 +103,12 @@ pub fn live_front(size: TileSize, icon: Icon, count: Rc<dyn Fn() -> u32>, bg: Rc
         .gap(u(8.))
         .bg(move || bg())
         .child(icon.render(icon_px, ink))
-        .child(label(count_text).font_family(FONT_FAMILY).text_size(u(size::HUGE * 0.8)).font_weight(LIGHT).text_color(ink))
+        .child(
+            label(count_text)
+                .font_family(FONT_FAMILY)
+                .text_size(u(size::HUGE * 0.8))
+                .font_weight(LIGHT)
+                .text_color(ink),
+        )
         .into_element()
 }

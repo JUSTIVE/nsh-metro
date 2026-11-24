@@ -197,7 +197,7 @@ pub fn turnstile_page(s: DemoState, host: Host) -> AnyElement {
 
 /// The turnstile page's tiles, with `pinned` tiles after mail: pinning one
 /// slides the rest along to make room, and the new tile turns in.
-fn turnstile_tiles(s: DemoState, pinned: usize) -> Vec<nsh_metro::Tile> {
+fn turnstile_tiles(s: DemoState, pinned: usize) -> Vec<Tile> {
     let again = move |key: &'static str, size: TileSize, icon: Icon, color: Option<Accent>| {
         let t = tile(key, size).icon(icon).on_click(move || {
             s.turnstile_exits.update(|n| *n += 1);
@@ -208,8 +208,6 @@ fn turnstile_tiles(s: DemoState, pinned: usize) -> Vec<nsh_metro::Tile> {
             None => t,
         }
     };
-    const PINNED: [(TileSize, Icon); 4] =
-        [(TileSize::Small, Icon::Favorite), (TileSize::Medium, Icon::Camera), (TileSize::Small, Icon::Wifi), (TileSize::Wide, Icon::Flask)];
     let mut tiles = vec![
         again("ts-mail", TileSize::Medium, Icon::Mail, None).title("mail"),
         again("ts-phone", TileSize::Small, Icon::Phone, Some(Accent::Teal)),
@@ -222,7 +220,10 @@ fn turnstile_tiles(s: DemoState, pinned: usize) -> Vec<nsh_metro::Tile> {
     ];
     for n in (0..pinned).rev() {
         let (size, icon) = PINNED[n % PINNED.len()];
-        tiles.insert(1, tile(format!("ts-pinned-{n}"), size).icon(icon).color(Accent::ALL[(n * 7 + 3) % Accent::ALL.len()].color()));
+        tiles.insert(
+            1,
+            tile(format!("ts-pinned-{n}"), size).icon(icon).color(Accent::ALL[(n * 7 + 3) % Accent::ALL.len()].color()),
+        );
     }
     tiles
 }
@@ -264,3 +265,10 @@ fn start_screen(s: DemoState, host: Host) -> AnyElement {
         )
         .into_element()
 }
+
+const PINNED: [(TileSize, Icon); 4] = [
+    (TileSize::Small, Icon::Favorite),
+    (TileSize::Medium, Icon::Camera),
+    (TileSize::Small, Icon::Wifi),
+    (TileSize::Wide, Icon::Flask),
+];

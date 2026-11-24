@@ -12,7 +12,7 @@ fn initials(name: &str) -> String {
 }
 
 fn role_name(member: &Member) -> &'static str {
-    ROLES.iter().find(|r| r.id == member.role).map(|r| r.name).unwrap_or("")
+    ROLES.iter().find(|r| r.id == member.role).map_or("", |r| r.name)
 }
 
 fn member_item(member: &Member) -> ListItem {
@@ -30,7 +30,12 @@ fn pane(app: App, selected: usize) -> AnyElement {
     let rows: Vec<AnyElement> = app.read(|s| match selected {
         0 | 1 => {
             let alumni = selected == 1;
-            s.data.members.iter().filter(|m| m.left.is_some() == alumni).map(|m| member_item(m).into_element()).collect()
+            s.data
+                .members
+                .iter()
+                .filter(|m| m.left.is_some() == alumni)
+                .map(|m| member_item(m).into_element())
+                .collect()
         }
         _ => ROLES
             .iter()

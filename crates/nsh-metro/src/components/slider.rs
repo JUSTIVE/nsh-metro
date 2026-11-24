@@ -114,7 +114,12 @@ impl IntoElement for Slider {
         };
         view()
             .gap(u(6.))
-            .children(self.header.map(|h| label(move || h.get()).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
+            .children(self.header.map(|h| {
+                label(move || h.get())
+                    .font_family(FONT_FAMILY)
+                    .text_size(u(size::NORMAL))
+                    .text_color(move || palette().subtle)
+            }))
             .child(bar)
             .into_element()
     }

@@ -2,9 +2,8 @@
 
 use nsh_core::prelude::*;
 use nsh_metro::{
-    Accent, Icon, TextStyle, Theme, button, check_box, hyperlink, list_picker, radio_button, round_button,
-    slider, text, text_box,
-    toggle_switch, u,
+    Accent, Icon, TextStyle, Theme, button, check_box, hyperlink, list_picker, radio_button, round_button, slider,
+    text, text_box, toggle_switch, u,
 };
 
 use super::{DemoState, caption, page, stack};
@@ -40,7 +39,9 @@ pub fn buttons(s: DemoState) -> AnyElement {
             )
             .child(caption("full width"))
             .child(button("sign in").full_width().on_click(press("sign in")))
-            .child(text(TextStyle::Large, move || format!("{} taps · last: {}", s.button_taps.get(), s.last_button.get()))),
+            .child(text(TextStyle::Large, move || {
+                format!("{} taps · last: {}", s.button_taps.get(), s.last_button.get())
+            })),
     )
 }
 
@@ -61,9 +62,11 @@ pub fn round_buttons(s: DemoState) -> AnyElement {
             .child(transport)
             .child(text(TextStyle::Subtle, move || if s.playing.get() { "playing" } else { "paused" }))
             .child(caption("filled = toggled on"))
-            .child(row().gap(u(20.)).child(favorite).child(text(TextStyle::Normal, move || {
-                if s.favorite.get() { "favourite" } else { "not a favourite" }
-            })))
+            .child(
+                row().gap(u(20.)).child(favorite).child(text(TextStyle::Normal, move || {
+                    if s.favorite.get() { "favourite" } else { "not a favourite" }
+                })),
+            )
             .child(caption("sizes · disabled"))
             .child(
                 row()
@@ -117,7 +120,8 @@ pub fn toggle_switches(s: DemoState) -> AnyElement {
 
 pub fn check_boxes(s: DemoState) -> AnyElement {
     let labels = ["sync contacts", "sync calendar", "sync photos"];
-    let boxes = labels.into_iter().zip(s.checks).map(|(label, c)| check_box(c).label(label).on_change(move |v| c.set(v)));
+    let boxes =
+        labels.into_iter().zip(s.checks).map(|(label, c)| check_box(c).label(label).on_change(move |v| c.set(v)));
     page(
         "check box",
         stack()
@@ -204,7 +208,9 @@ pub fn text_boxes(s: DemoState) -> AnyElement {
         stack()
             .child(text_box(s.name).header("name").placeholder("your name").on_focus_change(move |f| focused.set(f)))
             .child(text(TextStyle::Large, greeting))
-            .child(caption(move || if focused.get() { "focused: white field, accent border" } else { "click the field to focus" }))
+            .child(caption(move || {
+                if focused.get() { "focused: white field, accent border" } else { "click the field to focus" }
+            }))
             .child(text_box(s.message).header("message").placeholder("type and press enter").on_submit(move |v| {
                 let sent = v.trim().to_string();
                 if !sent.is_empty() {

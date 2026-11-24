@@ -39,7 +39,7 @@ impl FlyoutWidth {
 
 /// Height of the accent header.
 pub const FLYOUT_HEADER: f32 = 80.;
-/// Sliding in, in ms: WinJS `showPanel`, a long hard deceleration.
+/// Sliding in, in ms: `WinJS` `showPanel`, a long hard deceleration.
 pub const FLYOUT_IN: f32 = 550.;
 /// Sliding out, in ms: quicker, accelerating away.
 pub const FLYOUT_OUT: f32 = 250.;
@@ -177,7 +177,9 @@ impl IntoElement for SettingsFlyout {
                 .on_press(|| {})
                 .child(header)
                 .child(
-                    scroll().flex_1().child(view().px(u(24.)).py(u(20.)).gap(u(18.)).children(content.iter().map(|c| c()))),
+                    scroll()
+                        .flex_1()
+                        .child(view().px(u(24.)).py(u(20.)).gap(u(18.)).children(content.iter().map(|c| c()))),
                 );
             // While open, a press outside the panel closes it.
             let dismiss = dismiss.clone();
@@ -189,12 +191,7 @@ impl IntoElement for SettingsFlyout {
                     }
                 })
             };
-            view()
-                .absolute()
-                .inset_0()
-                .child(when(move || is_open.get(), catcher))
-                .child(panel)
-                .into_element()
+            view().absolute().inset_0().child(when(move || is_open.get(), catcher)).child(panel).into_element()
         };
         dynamic(move || if mounted.get() { panel() } else { view().into_element() }).into_element()
     }

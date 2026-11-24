@@ -15,7 +15,9 @@ use crate::{
     theme::{FONT_FAMILY, LIGHT, SEMILIGHT, palette, size, u},
 };
 
-/// What sits in a list item's leading square.
+/// What sits in a list item's leading square. (Built once and moved into
+/// the item; the element variant's size doesn't matter.)
+#[allow(clippy::large_enum_variant)]
 pub enum Leading {
     Icon(Icon),
     Glyph(SharedString),
@@ -95,7 +97,9 @@ impl IntoElement for ListItem {
                 .bg(move || leading_color.unwrap_or(palette().accent))
                 .child(match l {
                     Leading::Icon(i) => i.render(32., ink),
-                    Leading::Glyph(g) => label(g).font_family(FONT_FAMILY).text_size(u(size::LARGE)).text_color(ink).into_element(),
+                    Leading::Glyph(g) => {
+                        label(g).font_family(FONT_FAMILY).text_size(u(size::LARGE)).text_color(ink).into_element()
+                    }
                     Leading::Element(e) => e,
                 })
         });
@@ -148,8 +152,8 @@ impl ListGroup {
 
 /// The keys of a people-hub jump grid.
 pub const ALPHABET: [&str; 27] = [
-    "#", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u",
-    "v", "w", "x", "y", "z",
+    "#", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v",
+    "w", "x", "y", "z",
 ];
 
 /// A grouped list whose group headers open a grid of keys; a key jumps to
@@ -195,12 +199,19 @@ impl IntoElement for JumpList {
                 .bg(move || palette().accent)
                 .cursor_pointer()
                 .on_press(move || grid_open.set(true))
-                .child(label(key).font_family(FONT_FAMILY).text_size(u(size::LARGE + 3.)).text_color(move || palette().accent_ink))
+                .child(
+                    label(key)
+                        .font_family(FONT_FAMILY)
+                        .text_size(u(size::LARGE + 3.))
+                        .text_color(move || palette().accent_ink),
+                )
         };
         let list = scroll().size_full().child(
             view()
                 .px(u(PAGE_MARGIN))
-                .children(self.groups.into_iter().zip(&refs).map(|(g, r)| view().child(header(g.key, r)).children(g.items)))
+                .children(
+                    self.groups.into_iter().zip(&refs).map(|(g, r)| view().child(header(g.key, r)).children(g.items)),
+                )
                 .child(view().h(u(80.))),
         );
         let refs = Rc::new(refs);
@@ -223,7 +234,7 @@ impl IntoElement for JumpList {
                     );
                 let cell = match target {
                     Some(t) => cell.cursor_pointer().on_press(move || {
-                        let mut o = nsh_core::RevealOptions::default();
+                        let mut o = RevealOptions::default();
                         o.animated = false;
                         refs[t].reveal(o);
                         grid_open.set(false);
@@ -238,7 +249,15 @@ impl IntoElement for JumpList {
                 .inset_0()
                 .bg(move || palette().background.opacity(0.92))
                 .on_press(move || grid_open.set(false))
-                .child(view().flex_row().flex_wrap().gap(u(10.)).p(u(PAGE_MARGIN)).pt(u(40.)).children(cells.collect::<Vec<_>>()))
+                .child(
+                    view()
+                        .flex_row()
+                        .flex_wrap()
+                        .gap(u(10.))
+                        .p(u(PAGE_MARGIN))
+                        .pt(u(40.))
+                        .children(cells.collect::<Vec<_>>()),
+                )
         };
         view().relative().size_full().child(list).child(when(move || grid_open.get(), grid)).into_element()
     }
@@ -300,7 +319,9 @@ impl IntoElement for ListPicker {
                                         f(ix);
                                     }
                                 })
-                                .child(label(item).text_color(move || if ix == sel { palette().accent } else { palette().foreground }))
+                                .child(label(item).text_color(move || {
+                                    if ix == sel { palette().accent } else { palette().foreground }
+                                }))
                         }))
                         .into_element()
                 } else {
@@ -309,7 +330,9 @@ impl IntoElement for ListPicker {
                         .py(u(6.))
                         .cursor_pointer()
                         .on_press(move || open.set(true))
-                        .child(label(items.get(sel).cloned().unwrap_or_default()).text_color(move || palette().foreground))
+                        .child(
+                            label(items.get(sel).cloned().unwrap_or_default()).text_color(move || palette().foreground),
+                        )
                         .into_element()
                 }
             }

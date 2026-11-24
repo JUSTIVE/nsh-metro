@@ -9,8 +9,8 @@ use std::cell::Cell;
 use std::rc::Rc;
 use std::time::Duration;
 
-use nsh_core::prelude::*;
 use nsh_core::WheelDelta;
+use nsh_core::prelude::*;
 
 /// Horizontal travel (px) that turns a scroll into a page step.
 pub const SWIPE_THRESHOLD: f32 = 60.;

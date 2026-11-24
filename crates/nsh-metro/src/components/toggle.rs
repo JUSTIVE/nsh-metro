@@ -27,7 +27,13 @@ pub struct ToggleSwitch {
 }
 
 pub fn toggle_switch(on: impl IntoReactive<bool>) -> ToggleSwitch {
-    ToggleSwitch { on: on.into_reactive(), header: None, labels: ("On".into(), "Off".into()), disabled: false, on_change: None }
+    ToggleSwitch {
+        on: on.into_reactive(),
+        header: None,
+        labels: ("On".into(), "Off".into()),
+        disabled: false,
+        on_change: None,
+    }
 }
 
 impl ToggleSwitch {
@@ -79,7 +85,7 @@ impl IntoElement for ToggleSwitch {
             let on = on.clone();
             move || if on.get() { on_label.clone() } else { off_label.clone() }
         };
-        let left = TransformOrigin { x: px(0.).into(), y: relative(0.5).into(), z: Points::ZERO };
+        let left = TransformOrigin { x: px(0.).into(), y: relative(0.5), z: Points::ZERO };
         let track = view()
             .relative()
             .w(u(TRACK_W))
@@ -107,7 +113,9 @@ impl IntoElement for ToggleSwitch {
             .child(track);
         let el = view()
             .gap(u(4.))
-            .children(self.header.map(|h| label(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
+            .children(self.header.map(|h| {
+                label(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)
+            }))
             .child(row);
         match self.on_change.filter(|_| !disabled) {
             Some(f) => el.cursor_pointer().on_press(move || f(!untracked(|| on.get()))).into_element(),
@@ -169,7 +177,11 @@ impl IntoElement for CheckBox {
             )
             .children(self.label.map(|l| label(l).font_family(FONT_FAMILY).text_size(u(size::MEDIUM)).text_color(fg)));
         match self.on_change.filter(|_| !disabled) {
-            Some(f) => el.cursor_pointer().active(|s| s.opacity(0.7)).on_press(move || f(!untracked(|| checked.get()))).into_element(),
+            Some(f) => el
+                .cursor_pointer()
+                .active(|s| s.opacity(0.7))
+                .on_press(move || f(!untracked(|| checked.get())))
+                .into_element(),
             None => el.into_element(),
         }
     }
@@ -221,7 +233,13 @@ impl IntoElement for RadioButton {
                     .rounded(px(16.))
                     .border(px(2.))
                     .border_color(fg)
-                    .child(view().size(u(14.)).rounded(px(7.)).bg(fg).opacity(move || if selected.get() { 1f32 } else { 0f32 })),
+                    .child(
+                        view()
+                            .size(u(14.))
+                            .rounded(px(7.))
+                            .bg(fg)
+                            .opacity(move || if selected.get() { 1f32 } else { 0f32 }),
+                    ),
             )
             .children(self.label.map(|l| label(l).font_family(FONT_FAMILY).text_size(u(size::MEDIUM)).text_color(fg)));
         match self.on_select.filter(|_| !disabled) {

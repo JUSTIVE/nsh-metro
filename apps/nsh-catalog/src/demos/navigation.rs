@@ -118,12 +118,9 @@ fn big(caption: &'static str) -> Text {
 
 pub fn panorama_page(s: DemoState) -> AnyElement {
     let collection = || {
-        view()
-            .child(big("music"))
-            .child(big("videos"))
-            .child(big("podcasts"))
-            .child(big("radio"))
-            .child(view().pt(u(12.)).child(text(TextStyle::Subtle, "shift + scroll, swipe, or tap the peeking section")))
+        view().child(big("music")).child(big("videos")).child(big("podcasts")).child(big("radio")).child(
+            view().pt(u(12.)).child(text(TextStyle::Subtle, "shift + scroll, swipe, or tap the peeking section")),
+        )
     };
     let history = || {
         let colors = [Accent::Orange, Accent::Magenta, Accent::Teal, Accent::Lime, Accent::Violet, Accent::Cobalt];
@@ -133,12 +130,12 @@ pub fn panorama_page(s: DemoState) -> AnyElement {
     };
     let new = || {
         view().children(
-            [("random access memories", "daft punk"), ("lonerism", "tame impala"), ("settle", "disclosure")].into_iter().map(
-                |(album, artist)| {
+            [("random access memories", "daft punk"), ("lonerism", "tame impala"), ("settle", "disclosure")]
+                .into_iter()
+                .map(|(album, artist)| {
                     // The leading square takes a fixed colour: the accent now.
                     list_item(album).subtitle(artist).leading_icon(Icon::Play).leading_color(palette().accent)
-                },
-            ),
+                }),
         )
     };
     panorama("music+videos", s.panorama)

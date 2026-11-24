@@ -270,14 +270,14 @@ impl Page {
     pub fn snippet(self) -> &'static str {
         match self {
             Page::Palette => {
-                r#"// re-skin the surface
+                r"// re-skin the surface
 Theme::set_mode(Mode::Light);
 Theme::set_accent(Accent::Lime);
 
 // bind colours: a theme change updates only these
 view()
     .bg(move || palette().background)
-    .text_color(move || palette().foreground)"#
+    .text_color(move || palette().foreground)"
             }
             Page::Typography => {
                 r#"text(TextStyle::Title1, "settings").lowercase()
@@ -288,12 +288,12 @@ text(TextStyle::Subtle, "last synced 2 min ago")
 text(TextStyle::Large, move || format!("{n} strains"))"#
             }
             Page::Icons => {
-                r#"// SVG markup embedded in the binary,
+                r"// SVG markup embedded in the binary,
 // tinted through currentColor
 Icon::Mail.render(32., move || palette().foreground)
 icon(Icon::Search, 20., move || palette().accent)
 
-for i in Icon::ALL { /* i.name(), i.markup() */ }"#
+for i in Icon::ALL { /* i.name(), i.markup() */ }"
             }
             Page::Tile => {
                 r#"tile("mail", TileSize::Medium)
@@ -358,12 +358,12 @@ button("share").icon(Icon::Share)
 button("sign in").full_width()"#
             }
             Page::RoundButton => {
-                r#"round_button(Icon::Play)
+                r"round_button(Icon::Play)
     .diameter(72.)
     .on_click(|| ..)
 
 round_button(Icon::Favorite)
-    .filled(favorite)"#
+    .filled(favorite)"
             }
             Page::Hyperlink => {
                 r#"hyperlink("privacy statement")
@@ -385,11 +385,11 @@ toggle_switch(v)
     .on_change(move |c| sync.set(c))"#
             }
             Page::RadioButton => {
-                r#"for (ix, label) in ROUTES.iter().enumerate() {
+                r"for (ix, label) in ROUTES.iter().enumerate() {
     radio_button(move || route.get() == ix)
         .label(*label)
         .on_select(move || route.set(ix))
-}"#
+}"
             }
             Page::Slider => {
                 r#"slider(volume) // a Signal<f32>, 0–1
@@ -413,14 +413,14 @@ text_box(name)
 
 text(TextStyle::Large, move || name.get())"#
             }
-            Page::ProgressBar => r#"progress_bar(move || done.get())"#,
+            Page::ProgressBar => r"progress_bar(move || done.get())",
             Page::ProgressDots => {
-                r#"// indeterminate: the five flowing dots
-when(move || loading.get(), progress_dots)"#
+                r"// indeterminate: the five flowing dots
+when(move || loading.get(), progress_dots)"
             }
             Page::ProgressRing => {
-                r#"progress_ring()
-progress_ring().diameter(96.)"#
+                r"progress_ring()
+progress_ring().diameter(96.)"
             }
             Page::ListItem => {
                 r#"list_item("ben thompson")
@@ -434,11 +434,11 @@ progress_ring().diameter(96.)"#
 list_item("plain").subtle_subtitle()"#
             }
             Page::JumpList => {
-                r#"jump_list()
+                r"jump_list()
     .keys(ALPHABET) // empty letters grey out
     .groups(by_letter.map(|(key, rows)| {
         ListGroup::new(key, rows)
-    }))"#
+    }))"
             }
             Page::ContextMenu => {
                 r#"with_context_menu(
@@ -490,7 +490,7 @@ settings_flyout(open) // slides itself in and out
     .app_title("settings")"#
             }
             Page::Motion => {
-                r#"use nsh_metro::motion::{self, Direction};
+                r"use nsh_metro::motion::{self, Direction};
 
 // a real rotation about a hinge, on Core Animation
 motion::turnstile_in(Direction::Forward, delay, hinge, row)
@@ -499,7 +499,7 @@ motion::tilt(tile)
 
 let slide = PaneSlide::new();
 provide_context(slide); // list items trail it
-slide.play(Direction::Forward);"#
+slide.play(Direction::Forward);"
             }
         }
     }

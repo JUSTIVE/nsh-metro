@@ -37,14 +37,7 @@ pub fn catalog(page: Signal<Page>, demo: DemoState) -> AnyElement {
         .size_full()
         .bg(move || palette().background)
         .child(top_bar())
-        .child(
-            view()
-                .flex_row()
-                .flex_1()
-                .min_h(u(0.))
-                .child(sidebar(page))
-                .child(main_area(page, demo)),
-        )
+        .child(view().flex_row().flex_1().min_h(u(0.)).child(sidebar(page)).child(main_area(page, demo)))
         .into_element()
 }
 
@@ -85,11 +78,7 @@ fn top_bar() -> AnyElement {
                 .flex_row()
                 .items_baseline()
                 .gap(u(10.))
-                .child(
-                    sized("metro", size::EXTRA_LARGE)
-                        .font_weight(LIGHT)
-                        .text_color(move || palette().foreground),
-                )
+                .child(sized("metro", size::EXTRA_LARGE).font_weight(LIGHT).text_color(move || palette().foreground))
                 .child(text(TextStyle::Subtle, "nsh component catalog")),
         )
         .child(view().flex_1())
@@ -110,9 +99,7 @@ fn top_bar() -> AnyElement {
                 .child(view().flex_row().gap(u(3.)).children(swatches)),
         )
         .child(
-            check_box(move || Theme::get().reduced_motion)
-                .label("reduced motion")
-                .on_change(Theme::set_reduced_motion),
+            check_box(move || Theme::get().reduced_motion).label("reduced motion").on_change(Theme::set_reduced_motion),
         )
         .into_element()
 }
@@ -176,11 +163,7 @@ fn heading(page: Page) -> AnyElement {
                 .line_height(nsh_core::LineHeight::Points(px(64.)))
                 .text_color(move || palette().foreground),
         )
-        .child(
-            sized(page.description(), size::NORMAL)
-                .max_w(u(860.))
-                .text_color(move || palette().subtle),
-        )
+        .child(sized(page.description(), size::NORMAL).max_w(u(860.)).text_color(move || palette().subtle))
         .into_element()
 }
 
@@ -188,15 +171,13 @@ fn snippet(page: Page) -> AnyElement {
     view()
         .gap(u(10.))
         .child(text(TextStyle::GroupHeader, "usage"))
-        .child(
-            view().p(u(18.)).bg(move || palette().chrome).children(page.snippet().lines().map(|line| {
-                label(line.to_string())
-                    .h(u(20.))
-                    .font_family(MONO)
-                    .text_size(u(13.))
-                    .text_color(move || palette().foreground)
-            })),
-        )
+        .child(view().p(u(18.)).bg(move || palette().chrome).children(page.snippet().lines().map(|line| {
+            label(line.to_string())
+                .h(u(20.))
+                .font_family(MONO)
+                .text_size(u(13.))
+                .text_color(move || palette().foreground)
+        })))
         .into_element()
 }
 
@@ -236,27 +217,26 @@ fn main_area(page: Signal<Page>, demo: DemoState) -> AnyElement {
                     turnstile_in(Direction::Forward, 0., MAIN_PAD, heading(p))
                 }))
                 .child(
-                    view()
-                        .flex_row()
-                        .flex_wrap()
-                        .items_start()
-                        .gap(u(36.))
-                        .child(screen)
-                        .child(
-                            view()
-                                .flex_1()
-                                .min_w(u(260.))
-                                .max_w(u(560.))
-                                .gap(u(28.))
-                                // The column follows the phone: it changes once the
-                                // old page has turned away, and turns in itself,
-                                // so the new page's build lands between the two
-                                // motions instead of stalling the first frame.
-                                .child(dynamic(move || {
-                                    let p = side_page.get();
-                                    turnstile_in(Direction::Forward, 0., 0., view().gap(u(28.)).child(crate::playground::render(p)).child(snippet(p)))
-                                })),
-                        ),
+                    view().flex_row().flex_wrap().items_start().gap(u(36.)).child(screen).child(
+                        view()
+                            .flex_1()
+                            .min_w(u(260.))
+                            .max_w(u(560.))
+                            .gap(u(28.))
+                            // The column follows the phone: it changes once the
+                            // old page has turned away, and turns in itself,
+                            // so the new page's build lands between the two
+                            // motions instead of stalling the first frame.
+                            .child(dynamic(move || {
+                                let p = side_page.get();
+                                turnstile_in(
+                                    Direction::Forward,
+                                    0.,
+                                    0.,
+                                    view().gap(u(28.)).child(crate::playground::render(p)).child(snippet(p)),
+                                )
+                            })),
+                    ),
                 ),
         )
         .into_element()

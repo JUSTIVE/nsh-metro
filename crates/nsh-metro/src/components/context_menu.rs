@@ -10,7 +10,7 @@ use nsh_core::prelude::*;
 use crate::{
     button::ClickHandler,
     components::text::label,
-    motion::{EXP6_OUT, ENTER, SWIVEL_IN_DEG},
+    motion::{ENTER, EXP6_OUT, SWIVEL_IN_DEG},
     theme::{FONT_FAMILY, palette, reduced_motion, size, u},
 };
 
@@ -86,8 +86,12 @@ pub fn with_context_menu(el: impl IntoElement, menu: ContextMenu) -> AnyElement 
     let window = signal((0f32, 0f32));
     let target = view()
         .child(el)
-        .on_context_menu(move |e: &ContextMenuEvent| open.set(Some((f32::from(e.page_position.x), f32::from(e.page_position.y)))))
-        .on_long_press(move |e: &PressEvent| open.set(Some((f32::from(e.page_position.x), f32::from(e.page_position.y)))));
+        .on_context_menu(move |e: &ContextMenuEvent| {
+            open.set(Some((f32::from(e.page_position.x), f32::from(e.page_position.y))));
+        })
+        .on_long_press(move |e: &PressEvent| {
+            open.set(Some((f32::from(e.page_position.x), f32::from(e.page_position.y))));
+        });
     let layer = move || {
         let Some(at) = open.get() else { return view().into_element() };
         let entries = entries.clone();
@@ -104,15 +108,11 @@ pub fn with_context_menu(el: impl IntoElement, menu: ContextMenu) -> AnyElement 
         let rows = entries.iter().map(|entry| {
             let enabled = entry.on_click.is_some();
             let f = entry.on_click.clone();
-            let row = view()
-                .h(u(ROW_H))
-                .px(u(20.))
-                .justify_center()
-                .child(
-                    label(SharedString::from(entry.label.to_lowercase()))
-                        .text_size(u(size::LARGE - 3.))
-                        .text_color(move || if enabled { palette().foreground } else { palette().disabled }),
-                );
+            let row = view().h(u(ROW_H)).px(u(20.)).justify_center().child(
+                label(SharedString::from(entry.label.to_lowercase()))
+                    .text_size(u(size::LARGE - 3.))
+                    .text_color(move || if enabled { palette().foreground } else { palette().disabled }),
+            );
             match f {
                 Some(f) => row
                     .cursor_pointer()
@@ -127,13 +127,8 @@ pub fn with_context_menu(el: impl IntoElement, menu: ContextMenu) -> AnyElement 
             }
         });
         // The panel swivels open about its top edge, out of the page.
-        let panel = view()
-            .absolute()
-            .left(u(x))
-            .top(u(y))
-            .w(u(MENU_W))
-            .perspective(px(crate::motion::PERSPECTIVE))
-            .child(
+        let panel =
+            view().absolute().left(u(x)).top(u(y)).w(u(MENU_W)).perspective(px(crate::motion::PERSPECTIVE)).child(
                 view()
                     .py(u(PAD_Y))
                     .bg(move || palette().chrome)
@@ -141,7 +136,7 @@ pub fn with_context_menu(el: impl IntoElement, menu: ContextMenu) -> AnyElement 
                     .border_color(move || palette().border.opacity(0.35))
                     .font_family(FONT_FAMILY)
                     .transform_origin(nsh_core::element::TransformOrigin {
-                        x: relative(0.5).into(),
+                        x: relative(0.5),
                         y: px(0.).into(),
                         z: Points::ZERO,
                     })
@@ -160,7 +155,9 @@ pub fn with_context_menu(el: impl IntoElement, menu: ContextMenu) -> AnyElement 
                     .inset_0()
                     .bg(move || palette().background.opacity(0.35))
                     .bind_opacity(&fade)
-                    .on_layout(move |b: &Bounds<Points>| window.set((f32::from(b.size.width), f32::from(b.size.height))))
+                    .on_layout(move |b: &Bounds<Points>| {
+                        window.set((f32::from(b.size.width), f32::from(b.size.height)));
+                    })
                     .on_press(move || open.set(None))
                     .on_context_menu(move |_: &ContextMenuEvent| open.set(None)),
             )

@@ -75,7 +75,14 @@ impl IntoElement for SystemTray {
             .h(u(32.))
             .px(u(12.))
             .bg(move || if transparent { palette().chrome.opacity(0.) } else { palette().chrome })
-            .child(view().flex_row().gap(u(6.)).items_center().child(Icon::Signal.render(16., fg)).child(Icon::Wifi.render(16., fg)))
+            .child(
+                view()
+                    .flex_row()
+                    .gap(u(6.))
+                    .items_center()
+                    .child(Icon::Signal.render(16., fg))
+                    .child(Icon::Wifi.render(16., fg)),
+            )
             .child(
                 view()
                     .flex_row()

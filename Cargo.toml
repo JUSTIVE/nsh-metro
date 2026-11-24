@@ -10,9 +10,41 @@ license = "MIT"
 [workspace.dependencies]
 # Longbridge's Native Shell (https://nsh.dev): native AppKit views on macOS.
 nsh-core = "0.6.1"
-nsh-base = { version = "0.6.1", default-features = false }
 nsh-platform-macos = { version = "0.6.1", default-features = false, features = ["svg"] }
 nsh-metro = { path = "crates/nsh-metro" }
+
+[workspace.lints.rust]
+unsafe_code = "deny"
+unused_qualifications = "warn"
+rust_2018_idioms = { level = "warn", priority = -1 }
+
+[workspace.lints.clippy]
+# Clippy's strict group, with the few lints that don't fit a UI library
+# turned back off (each says why).
+pedantic = { level = "warn", priority = -1 }
+# Layout and animation maths moves between f32, f64 and indices all day;
+# the values are small and the casts are deliberate.
+cast_precision_loss = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_possible_wrap = "allow"
+# Builders take and return `self` by value by design; their types are
+# `#[must_use]` instead of every method.
+needless_pass_by_value = "allow"
+large_types_passed_by_value = "allow"
+must_use_candidate = "allow"
+return_self_not_must_use = "allow"
+# Colours are written as 0xRRGGBB.
+unreadable_literal = "allow"
+# Component modules name their types after themselves (`tile::Tile`).
+module_name_repetitions = "allow"
+# Long builder chains read better whole.
+too_many_lines = "allow"
+# Beyond pedantic: these catch real mistakes.
+dbg_macro = "warn"
+todo = "warn"
+unimplemented = "warn"
+print_stdout = "warn"
 
 [profile.dev]
 opt-level = 1

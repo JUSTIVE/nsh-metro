@@ -87,17 +87,13 @@ impl IntoElement for AppBar {
         let body = move || {
             let expanded = open.get();
             let minimized = minimized_mode && !expanded;
-            let row = view()
-                .flex_row()
-                .justify_center()
-                .pt(u(8.))
-                .pb(u(if expanded { 4. } else { 10. }))
-                .children(buttons.iter().map(|b| {
+            let row = view().flex_row().justify_center().pt(u(8.)).pb(u(if expanded { 4. } else { 10. })).children(
+                buttons.iter().map(|b| {
                     let mut rb = round_button(b.icon).diameter(44.).disabled(b.disabled);
                     if let Some(f) = b.on_click.clone() {
                         rb = rb.on_click(move || {
                             open.set(false);
-                            f()
+                            f();
                         });
                     }
                     let disabled = b.disabled;
@@ -107,7 +103,8 @@ impl IntoElement for AppBar {
                             .text_size(u(size::SMALL - 2.))
                             .text_color(move || if disabled { palette().disabled } else { palette().foreground })
                     }))
-                }));
+                }),
+            );
             let menu = (expanded && !items.is_empty()).then(|| {
                 view().pt(u(10.)).pb(u(12.)).px(u(24.)).gap(u(14.)).children(items.iter().map(|item| {
                     let f = item.on_click.clone();

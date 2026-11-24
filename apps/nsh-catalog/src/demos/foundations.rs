@@ -13,6 +13,9 @@ use super::{caption, page, stack};
 /// Four squares across the 432 px content column.
 const CELL: f32 = 102.;
 
+/// A palette token: its name and how to read it.
+type Token = (&'static str, fn(&Palette) -> Hsla);
+
 pub fn palette_page() -> AnyElement {
     let swatches = Accent::ALL.into_iter().map(|a| {
         view()
@@ -37,7 +40,7 @@ pub fn palette_page() -> AnyElement {
             )
     });
 
-    let tokens: [(&str, fn(&Palette) -> Hsla); 12] = [
+    let tokens: [Token; 12] = [
         ("background", |p| p.background),
         ("foreground", |p| p.foreground),
         ("subtle", |p| p.subtle),
@@ -90,9 +93,11 @@ const STYLES: [(TextStyle, &str, &str); 11] = [
 pub fn typography() -> AnyElement {
     page(
         "typography",
-        stack().child(caption(format!("set in {}", FONT_FAMILY()))).children(STYLES.into_iter().map(|(style, name, sample)| {
-            view().child(caption(format!("{name} · {} px", style.size()))).child(text(style, sample))
-        })),
+        stack().child(caption(format!("set in {}", FONT_FAMILY()))).children(STYLES.into_iter().map(
+            |(style, name, sample)| {
+                view().child(caption(format!("{name} · {} px", style.size()))).child(text(style, sample))
+            },
+        )),
     )
 }
 

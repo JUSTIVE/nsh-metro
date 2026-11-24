@@ -7,10 +7,9 @@
 use std::fmt;
 
 use crate::data::{
-    Assay, Construct, DECK_TODAY, DeckBlock, FacilityData, Incident, IncidentArea,
-    IncidentSeverity, IncidentStatus, Instrument, LotState, ReagentLot, Run, RunPhase, Sample,
-    Sensor, SensorKind, Shipment, ShipmentStage, Strain, StrainStatus, TimelineEntry, sensor_state,
-    to_fixed,
+    Assay, Construct, DECK_TODAY, DeckBlock, FacilityData, Incident, IncidentArea, IncidentSeverity, IncidentStatus,
+    Instrument, LotState, ReagentLot, Run, RunPhase, Sample, Sensor, SensorKind, Shipment, ShipmentStage, Strain,
+    StrainStatus, TimelineEntry, sensor_state, to_fixed,
 };
 
 /// OD600 at which a culture tops out.
@@ -30,13 +29,9 @@ pub enum StoreError {
 impl fmt::Display for StoreError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         f.write_str(match self {
-            StoreError::EmptyTitle => {
-                "Give the incident a title so the shift lead knows what happened."
-            }
+            StoreError::EmptyTitle => "Give the incident a title so the shift lead knows what happened.",
             StoreError::UnknownRun => "That run is no longer on the ledger.",
-            StoreError::NotHarvestable => {
-                "Only a culture in log or stationary phase can be harvested."
-            }
+            StoreError::NotHarvestable => "Only a culture in log or stationary phase can be harvested.",
         })
     }
 }
@@ -66,13 +61,7 @@ pub struct Store {
 impl Store {
     pub fn new(data: FacilityData) -> Self {
         let baselines = data.sensors.iter().map(|s| s.value).collect();
-        Self {
-            data,
-            expiry_window: 30,
-            baselines,
-            rng: 0x9E37_79B9_7F4A_7C15,
-            next_incident: 2401,
-        }
+        Self { data, expiry_window: 30, baselines, rng: 0x9E37_79B9_7F4A_7C15, next_incident: 2401 }
     }
 
     /* lookups ------------------------------------------------------------ */
@@ -99,22 +88,13 @@ impl Store {
         self.data.assays.iter().filter(move |a| a.run_id == run_id)
     }
     pub fn runs_of<'a>(&'a self, strain_id: &'a str) -> impl Iterator<Item = &'a Run> {
-        self.data
-            .runs
-            .iter()
-            .filter(move |r| r.strain_id == strain_id)
+        self.data.runs.iter().filter(move |r| r.strain_id == strain_id)
     }
     pub fn samples_of<'a>(&'a self, strain_id: &'a str) -> impl Iterator<Item = &'a Sample> {
-        self.data
-            .samples
-            .iter()
-            .filter(move |s| s.strain_id == strain_id)
+        self.data.samples.iter().filter(move |s| s.strain_id == strain_id)
     }
     pub fn children_of<'a>(&'a self, strain_id: &'a str) -> impl Iterator<Item = &'a Strain> {
-        self.data
-            .strains
-            .iter()
-            .filter(move |s| s.parent_id.as_deref() == Some(strain_id))
+        self.data.strains.iter().filter(move |s| s.parent_id.as_deref() == Some(strain_id))
     }
 
     /* live-tile readings ------------------------------------------------- */
@@ -124,52 +104,27 @@ impl Store {
     }
     /// Incidents not yet closed.
     pub fn open_incidents(&self) -> impl Iterator<Item = &Incident> {
-        self.data
-            .incidents
-            .iter()
-            .filter(|i| i.status != IncidentStatus::Closed)
+        self.data.incidents.iter().filter(|i| i.status != IncidentStatus::Closed)
     }
     pub fn sensors_in(&self, state: crate::data::SensorState) -> usize {
-        self.data
-            .sensors
-            .iter()
-            .filter(|s| s.state == state)
-            .count()
+        self.data.sensors.iter().filter(|s| s.state == state).count()
     }
     /// The sensor furthest outside (or nearest the edge of) its range.
     pub fn worst_sensor(&self) -> Option<&Sensor> {
-        self.data
-            .sensors
-            .iter()
-            .max_by(|a, b| excursion(a).total_cmp(&excursion(b)))
+        self.data.sensors.iter().max_by(|a, b| excursion(a).total_cmp(&excursion(b)))
     }
     pub fn active_strains(&self) -> usize {
-        self.data
-            .strains
-            .iter()
-            .filter(|s| s.status != StrainStatus::Archived)
-            .count()
+        self.data.strains.iter().filter(|s| s.status != StrainStatus::Archived).count()
     }
     /// (filled slots, total slots) across every rack.
     pub fn freezer_occupancy(&self) -> (usize, usize) {
-        self.data
-            .racks
-            .iter()
-            .flat_map(|r| &r.boxes)
-            .fold((0, 0), |(filled, total), b| {
-                (
-                    filled + b.slots.iter().filter(|s| s.is_some()).count(),
-                    total + b.slots.len(),
-                )
-            })
+        self.data.racks.iter().flat_map(|r| &r.boxes).fold((0, 0), |(filled, total), b| {
+            (filled + b.slots.iter().filter(|s| s.is_some()).count(), total + b.slots.len())
+        })
     }
     /// The undelivered shipment that lands first.
     pub fn next_shipment(&self) -> Option<&Shipment> {
-        self.data
-            .shipments
-            .iter()
-            .filter(|s| s.stage != ShipmentStage::Delivered)
-            .min_by_key(|s| s.eta_days)
+        self.data.shipments.iter().filter(|s| s.stage != ShipmentStage::Delivered).min_by_key(|s| s.eta_days)
     }
     pub fn lot_state(&self, lot: &ReagentLot) -> LotState {
         if lot.shelf_days < 0 {
@@ -183,24 +138,14 @@ impl Store {
         }
     }
     pub fn lots_in(&self, state: LotState) -> impl Iterator<Item = &ReagentLot> {
-        self.data
-            .lots
-            .iter()
-            .filter(move |l| self.lot_state(l) == state)
+        self.data.lots.iter().filter(move |l| self.lot_state(l) == state)
     }
     /// Deck blocks that cover today.
     pub fn deck_today(&self) -> impl Iterator<Item = &DeckBlock> {
-        self.data
-            .deck
-            .iter()
-            .filter(|b| b.day <= DECK_TODAY && DECK_TODAY < b.day + b.days)
+        self.data.deck.iter().filter(|b| b.day <= DECK_TODAY && DECK_TODAY < b.day + b.days)
     }
     pub fn active_members(&self) -> usize {
-        self.data
-            .members
-            .iter()
-            .filter(|m| m.left.is_none())
-            .count()
+        self.data.members.iter().filter(|m| m.left.is_none()).count()
     }
 
     /* mutations ---------------------------------------------------------- */
@@ -211,12 +156,7 @@ impl Store {
 
     /// Ends a live culture: it leaves the vessel at its current OD and titer.
     pub fn harvest(&mut self, run_id: &str) -> Result<&Run, StoreError> {
-        let run = self
-            .data
-            .runs
-            .iter_mut()
-            .find(|r| r.id == run_id)
-            .ok_or(StoreError::UnknownRun)?;
+        let run = self.data.runs.iter_mut().find(|r| r.id == run_id).ok_or(StoreError::UnknownRun)?;
         if !matches!(run.phase, RunPhase::Log | RunPhase::Stationary) {
             return Err(StoreError::NotHarvestable);
         }
@@ -233,29 +173,17 @@ impl Store {
             return Err(StoreError::EmptyTitle);
         }
         let instrument_id = match &draft.run_id {
-            Some(id) => self
-                .run(id)
-                .ok_or(StoreError::UnknownRun)?
-                .instrument_id
-                .clone(),
+            Some(id) => self.run(id).ok_or(StoreError::UnknownRun)?.instrument_id.clone(),
             None => None,
         };
         let code = format!("DEV-{}", self.next_incident);
-        let mut timeline = vec![TimelineEntry {
-            at: "today".into(),
-            text: format!("Raised by {OPERATOR} — {title}"),
-        }];
+        let mut timeline =
+            vec![TimelineEntry { at: "today".into(), text: format!("Raised by {OPERATOR} — {title}") }];
         if draft.quarantine {
-            timeline.push(TimelineEntry {
-                at: "today".into(),
-                text: "Area quarantined".into(),
-            });
+            timeline.push(TimelineEntry { at: "today".into(), text: "Area quarantined".into() });
         }
         if draft.page_lead {
-            timeline.push(TimelineEntry {
-                at: "today".into(),
-                text: "Floor lead paged".into(),
-            });
+            timeline.push(TimelineEntry { at: "today".into(), text: "Floor lead paged".into() });
         }
         self.data.incidents.insert(
             0,
@@ -283,19 +211,13 @@ impl Store {
     pub fn advance_incident(&mut self, id: &str) -> Option<IncidentStatus> {
         let incident = self.data.incidents.iter_mut().find(|i| i.id == id)?;
         let (next, note) = match incident.status {
-            IncidentStatus::Open => (
-                IncidentStatus::Investigating,
-                "Root cause analysis opened (5-why)",
-            ),
+            IncidentStatus::Open => (IncidentStatus::Investigating, "Root cause analysis opened (5-why)"),
             IncidentStatus::Investigating => (IncidentStatus::Capa, "CAPA filed"),
             IncidentStatus::Capa => (IncidentStatus::Closed, "Closed · verified"),
             IncidentStatus::Closed => return None,
         };
         incident.status = next;
-        incident.timeline.push(TimelineEntry {
-            at: "today".into(),
-            text: format!("{note} by {OPERATOR}"),
-        });
+        incident.timeline.push(TimelineEntry { at: "today".into(), text: format!("{note} by {OPERATOR}") });
         Some(next)
     }
 
@@ -370,7 +292,7 @@ pub fn reading(sensor: &Sensor) -> String {
 /// How far a reading sits from the centre of its range, in half-ranges
 /// (1 = at a limit, >1 = outside).
 fn excursion(sensor: &Sensor) -> f64 {
-    let mid = (sensor.low + sensor.high) / 2.;
+    let mid = f64::midpoint(sensor.low, sensor.high);
     (sensor.value - mid).abs() / ((sensor.high - sensor.low) / 2.)
 }
 
@@ -423,11 +345,7 @@ mod tests {
         assert_ne!(run.duration, "—");
         assert_eq!(s.live_runs().count(), live - 1);
         assert_eq!(s.harvest("r1").unwrap_err(), StoreError::NotHarvestable);
-        assert_eq!(
-            s.harvest("r2").unwrap_err(),
-            StoreError::NotHarvestable,
-            "lag cultures are not ready"
-        );
+        assert_eq!(s.harvest("r2").unwrap_err(), StoreError::NotHarvestable, "lag cultures are not ready");
         assert_eq!(s.harvest("nope").unwrap_err(), StoreError::UnknownRun);
     }
 
@@ -437,35 +355,17 @@ mod tests {
         let (total, open) = (s.data.incidents.len(), s.open_incidents().count());
         assert_eq!(s.file_incident(draft("   ")), Err(StoreError::EmptyTitle));
         assert_eq!(
-            s.file_incident(IncidentDraft {
-                run_id: Some("ghost".into()),
-                ..draft("foam")
-            }),
+            s.file_incident(IncidentDraft { run_id: Some("ghost".into()), ..draft("foam") }),
             Err(StoreError::UnknownRun)
         );
-        assert_eq!(
-            s.data.incidents.len(),
-            total,
-            "rejected drafts leave the ledger alone"
-        );
+        assert_eq!(s.data.incidents.len(), total, "rejected drafts leave the ledger alone");
 
-        let code = s
-            .file_incident(IncidentDraft {
-                run_id: Some("r1".into()),
-                ..draft("  foam over the top ")
-            })
-            .unwrap();
+        let code =
+            s.file_incident(IncidentDraft { run_id: Some("r1".into()), ..draft("  foam over the top ") }).unwrap();
         assert_eq!(code, "DEV-2401");
         let filed = &s.data.incidents[0];
-        assert_eq!(
-            (filed.title.as_str(), filed.status),
-            ("foam over the top", IncidentStatus::Open)
-        );
-        assert_eq!(
-            filed.instrument_id,
-            s.run("r1").unwrap().instrument_id,
-            "inherits the run's machine"
-        );
+        assert_eq!((filed.title.as_str(), filed.status), ("foam over the top", IncidentStatus::Open));
+        assert_eq!(filed.instrument_id, s.run("r1").unwrap().instrument_id, "inherits the run's machine");
         assert_eq!(filed.timeline.len(), 2, "raised + quarantined");
         assert_eq!(s.open_incidents().count(), open + 1);
         assert_eq!(s.file_incident(draft("second")).unwrap(), "DEV-2402");
@@ -477,14 +377,7 @@ mod tests {
         s.file_incident(draft("x")).unwrap();
         let id = s.data.incidents[0].id.clone();
         let steps: Vec<_> = std::iter::from_fn(|| s.advance_incident(&id)).collect();
-        assert_eq!(
-            steps,
-            [
-                IncidentStatus::Investigating,
-                IncidentStatus::Capa,
-                IncidentStatus::Closed
-            ]
-        );
+        assert_eq!(steps, [IncidentStatus::Investigating, IncidentStatus::Capa, IncidentStatus::Closed]);
     }
 
     #[test]
@@ -494,23 +387,12 @@ mod tests {
             s.tick();
             for sensor in &s.data.sensors {
                 let (lo, hi) = plausible(sensor);
-                assert!(
-                    (lo..=hi).contains(&sensor.value),
-                    "{} = {}",
-                    sensor.code,
-                    sensor.value
-                );
-                assert_eq!(
-                    sensor.state,
-                    sensor_state(sensor.value, sensor.low, sensor.high)
-                );
+                assert!((lo..=hi).contains(&sensor.value), "{} = {}", sensor.code, sensor.value);
+                assert_eq!(sensor.state, sensor_state(sensor.value, sensor.low, sensor.high));
             }
         }
         assert!(s.data.runs.iter().all(|r| r.od600 <= PEAK_OD));
-        assert!(
-            s.sensors_in(SensorState::Ok) > 0,
-            "most of the floor stays nominal"
-        );
+        assert!(s.sensors_in(SensorState::Ok) > 0, "most of the floor stays nominal");
     }
 
     #[test]
@@ -523,11 +405,7 @@ mod tests {
         let r2 = s.run("r2").unwrap();
         assert!(r2.od600 > lag);
         assert_eq!(r2.phase, RunPhase::Stationary, "lag → log → stationary");
-        assert_eq!(
-            s.run("r3").unwrap().phase,
-            RunPhase::Harvested,
-            "finished runs don't move"
-        );
+        assert_eq!(s.run("r3").unwrap().phase, RunPhase::Harvested, "finished runs don't move");
     }
 
     #[test]
@@ -538,13 +416,7 @@ mod tests {
         s.set_expiry_window(1000);
         assert_eq!(s.expiry_window, 90, "clamped to the slider range");
         assert!(s.lots_in(LotState::Expiring).count() >= narrow);
-        assert!(
-            s.data
-                .lots
-                .iter()
-                .filter(|l| l.shelf_days < 0)
-                .all(|l| s.lot_state(l) == LotState::Expired)
-        );
+        assert!(s.data.lots.iter().filter(|l| l.shelf_days < 0).all(|l| s.lot_state(l) == LotState::Expired));
     }
 
     #[test]

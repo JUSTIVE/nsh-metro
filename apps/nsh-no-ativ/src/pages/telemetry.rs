@@ -14,8 +14,8 @@ use crate::store::reading;
 const WINDOW_WIDTH: f32 = 1280.;
 
 fn sensor_card(app: App, ix: usize) -> View {
-    let sensor = move |f: fn(&Sensor) -> String| move || app.live(|s| s.data.sensors.get(ix).map(f).unwrap_or_default());
-    let state = move || app.live(|s| s.data.sensors.get(ix).map(|x| x.state).unwrap_or(SensorState::Ok));
+    let sensor = move |f: fn(&Sensor) -> String| move || app.live(|s| s.data.sensors.get(ix).map_or_default(f));
+    let state = move || app.live(|s| s.data.sensors.get(ix).map_or(SensorState::Ok, |x| x.state));
     let tone = move || match state() {
         SensorState::Ok => palette().foreground,
         SensorState::Warn => warn(),

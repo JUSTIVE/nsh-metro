@@ -16,11 +16,7 @@ mod telemetry;
 
 use nsh_core::prelude::*;
 use nsh_metro::label;
-use nsh_metro::{
-    Accent, AppBar, PAGE_MARGIN, TextStyle, page_header, text,
-    theme::FONT_FAMILY,
-    u,
-};
+use nsh_metro::{Accent, AppBar, PAGE_MARGIN, TextStyle, page_header, text, theme::FONT_FAMILY, u};
 
 use crate::app::{App, LEFT_GUTTER};
 use crate::nav::Page;
@@ -91,10 +87,7 @@ pub fn alarm() -> Hsla {
 
 /// A vertically scrolling page body with the standard margins.
 pub fn scrolling(content: View) -> AnyElement {
-    scroll()
-        .size_full()
-        .child(content.w_full().max_w(u(MAX_LINE)).px(u(PAGE_MARGIN)).pb(u(32.)))
-        .into_element()
+    scroll().size_full().child(content.w_full().max_w(u(MAX_LINE)).px(u(PAGE_MARGIN)).pb(u(32.))).into_element()
 }
 
 /// A page with the two-line header over a scrolling body.
@@ -128,7 +121,7 @@ pub fn subtle(s: impl IntoReactive<SharedString>) -> nsh_metro::Text {
 }
 
 /// Plain text in the Metro face at `size`, for the few one-off sizes.
-pub fn raw(s: impl IntoReactive<SharedString>, size: f32) -> nsh_core::prelude::Text {
+pub fn raw(s: impl IntoReactive<SharedString>, size: f32) -> Text {
     label(s).font_family(FONT_FAMILY).text_size(u(size))
 }
 

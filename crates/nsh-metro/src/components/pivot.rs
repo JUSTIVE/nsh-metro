@@ -88,7 +88,11 @@ pub fn header_glide(widths: &[f32], prev: usize, selected: usize, direction: Dir
     let span = |start: usize, count: usize| -> f32 { (0..count).map(|i| widths[(start + i) % len] + HEADER_GAP).sum() };
     if direction == Direction::Backward {
         let back = (prev + len - selected) % len;
-        HeaderGlide { order: (0..len + back).map(|i| (selected + i) % len).collect(), from: -span(selected, back), to: 0. }
+        HeaderGlide {
+            order: (0..len + back).map(|i| (selected + i) % len).collect(),
+            from: -span(selected, back),
+            to: 0.,
+        }
     } else {
         let ahead = (selected + len - prev) % len;
         HeaderGlide { order: (0..len + ahead).map(|i| (prev + i) % len).collect(), from: 0., to: -span(prev, ahead) }
@@ -112,7 +116,8 @@ pub fn is_forward(from: usize, to: usize, len: usize) -> bool {
 impl IntoElement for Pivot {
     fn into_element(self) -> AnyElement {
         let len = self.headers.len().max(1);
-        let labels: Rc<Vec<SharedString>> = Rc::new(self.headers.iter().map(|h| SharedString::from(h.to_lowercase())).collect());
+        let labels: Rc<Vec<SharedString>> =
+            Rc::new(self.headers.iter().map(|h| SharedString::from(h.to_lowercase())).collect());
         let widths = Rc::new(RefCell::new(vec![0f32; len]));
         let builders: Rc<Vec<PaneBuilder>> = Rc::new(match self.content {
             Some(c) => vec![c; len],
@@ -240,13 +245,7 @@ impl IntoElement for Pivot {
                     .child(view().ml(u(-2.)).overflow_hidden().child(dynamic(header_row))),
             )
             .child(
-                view()
-                    .flex_1()
-                    .min_h(px(0.))
-                    .relative()
-                    .pt(u(8.))
-                    .child(dynamic(leaving_pane))
-                    .child(dynamic(pane)),
+                view().flex_1().min_h(px(0.)).relative().pt(u(8.)).child(dynamic(leaving_pane)).child(dynamic(pane)),
             );
         match self.on_select.filter(|_| len > 1) {
             Some(f) => pager::pageable(

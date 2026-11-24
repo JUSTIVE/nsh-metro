@@ -6,7 +6,8 @@ use std::time::Duration;
 
 use nsh_core::prelude::*;
 use nsh_metro::{
-    FlyoutWidth, Icon, TextStyle, button, context_menu, list_item, with_context_menu, check_box, message_box, settings_flyout, slider, text, toast, toggle_switch,
+    FlyoutWidth, Icon, TextStyle, button, check_box, context_menu, list_item, message_box, settings_flyout, slider,
+    text, toast, toggle_switch, with_context_menu,
 };
 
 use super::{DemoState, caption, page, stack};
@@ -21,7 +22,9 @@ pub fn message_box_page(s: DemoState) -> AnyElement {
             .child(text(TextStyle::Normal, "Remove a saved network from this phone."))
             .child(view().flex_row().child(button("forget network").on_click(move || s.message_open.set(true))))
             .child(text(TextStyle::Accent, move || s.message_result.get()))
-            .child(caption(move || if s.dont_ask.get() { "\"don't ask again\" is ticked" } else { "will ask every time" })),
+            .child(caption(
+                move || if s.dont_ask.get() { "\"don't ask again\" is ticked" } else { "will ask every time" },
+            )),
     )
 }
 

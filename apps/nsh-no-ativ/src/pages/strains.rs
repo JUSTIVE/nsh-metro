@@ -97,7 +97,9 @@ pub fn detail(app: App, id: &str) -> PageView {
             Some(p) => p.into_element(),
             None => subtle("founder strain — no parent on record").into_element(),
         })
-        .children((!children.is_empty()).then(|| view().pt(u(6.)).child(subtle(format!("passaged into {}", children.len())))))
+        .children(
+            (!children.is_empty()).then(|| view().pt(u(6.)).child(subtle(format!("passaged into {}", children.len())))),
+        )
         .children(children);
 
     let constructs = view().child(heading("constructs")).children(constructs);

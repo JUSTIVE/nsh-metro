@@ -1,7 +1,9 @@
 //! Runs: a pivot over the ledger, and the run detail with harvest.
 
 use nsh_core::prelude::*;
-use nsh_metro::{Accent, Icon, Leading, ListItem, TextStyle, app_bar, list_item, palette, pivot, progress_bar, text, u};
+use nsh_metro::{
+    Accent, Icon, Leading, ListItem, TextStyle, app_bar, list_item, palette, pivot, progress_bar, text, u,
+};
 
 use crate::app::App;
 use crate::data::{Run, RunPhase, Verdict, od_series, run_log, to_fixed};
@@ -32,7 +34,7 @@ pub fn phase_color(phase: RunPhase) -> Hsla {
 
 /// A run as a list row, for any page that lists runs.
 pub fn run_item(app: App, run: &Run, store: &Store) -> ListItem {
-    let strain = store.strain(&run.strain_id).map(|s| format!("{} {}", s.code, s.name)).unwrap_or_default();
+    let strain = store.strain(&run.strain_id).map_or_default(|s| format!("{} {}", s.code, s.name));
     let initial = run.phase.as_str()[..1].to_string();
     let id = run.id.clone();
     list_item(run.code.clone())
@@ -82,9 +84,11 @@ fn growth_curve(app: App, id: String) -> AnyElement {
             .gap(u(3.))
             .h(u(56.))
             .pt(u(8.))
-            .children(series.into_iter().map(move |v| {
-                view().flex_1().h(relative((v / max) as f32)).bg(move || phase_color(phase))
-            }))
+            .children(
+                series
+                    .into_iter()
+                    .map(move |v| view().flex_1().h(relative((v / max) as f32)).bg(move || phase_color(phase))),
+            )
             .into_element()
     })
 }
@@ -106,16 +110,16 @@ pub fn detail(app: App, id: &str) -> PageView {
         let id = run.id.clone();
         move |f: fn(&Run) -> String| {
             let id = id.clone();
-            move || app.live(|s| s.run(&id).map(f).unwrap_or_default())
+            move || app.live(|s| s.run(&id).map_or_default(f))
         }
     };
     let phase = {
         let id = run.id.clone();
-        move || app.live(|s| s.run(&id).map(|r| r.phase).unwrap_or(RunPhase::Failed))
+        move || app.live(|s| s.run(&id).map_or(RunPhase::Failed, |r| r.phase))
     };
     let growth_now = {
         let id = run.id.clone();
-        move || app.live(|s| s.run(&id).map(growth).unwrap_or(0.))
+        move || app.live(|s| s.run(&id).map_or(0., growth))
     };
 
     let summary = view()
@@ -139,30 +143,30 @@ pub fn detail(app: App, id: &str) -> PageView {
         .child(half(fact("operator", run.operator.clone())))
         .child(half(fact("started", run.started.clone())))
         .child(half(fact("duration", run.duration.clone())))
-        .child(half(fact("charge", run.charge_l.map(|l| format!("{} L", to_fixed(l, 2))).unwrap_or_else(dash))))
+        .child(half(fact("charge", run.charge_l.map_or_else(dash, |l| format!("{} L", to_fixed(l, 2))))))
         .child(fact("draws", if lots.is_empty() { dash() } else { lots.join(", ") }));
 
-    let assay_block = view().children((!assays.is_empty()).then(|| heading("assays"))).children(assays.into_iter().map(|a| {
-        let flagged = a.verdict == Verdict::Flag;
-        view()
-            .flex_row()
-            .justify_between()
-            .py(u(4.))
-            .child(
-                view()
-                    .child(text(TextStyle::Normal, a.metric.clone()))
-                    .child(subtle(format!("{} · {}", a.kind.as_str(), a.verdict.as_str()))),
-            )
-            .child(text(TextStyle::Large, a.value.clone()).color(move || if flagged { alarm() } else { palette().foreground }))
-    }));
+    let assay_block =
+        view().children((!assays.is_empty()).then(|| heading("assays"))).children(assays.into_iter().map(|a| {
+            let flagged = a.verdict == Verdict::Flag;
+            view()
+                .flex_row()
+                .justify_between()
+                .py(u(4.))
+                .child(view().child(text(TextStyle::Normal, a.metric.clone())).child(subtle(format!(
+                    "{} · {}",
+                    a.kind.as_str(),
+                    a.verdict.as_str()
+                ))))
+                .child(
+                    text(TextStyle::Large, a.value.clone())
+                        .color(move || if flagged { alarm() } else { palette().foreground }),
+                )
+        }));
 
-    let log = view().child(heading("log")).child(
-        view().p(u(10.)).bg(move || palette().chrome).children(
-            run_log(&run)
-                .into_iter()
-                .map(|l| raw(l, 12.).font_family("Menlo").text_color(move || palette().subtle)),
-        ),
-    );
+    let log = view().child(heading("log")).child(view().p(u(10.)).bg(move || palette().chrome).children(
+        run_log(&run).into_iter().map(|l| raw(l, 12.).font_family("Menlo").text_color(move || palette().subtle)),
+    ));
 
     let body = titled(
         "runs",

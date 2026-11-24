@@ -34,12 +34,23 @@ pub struct Panorama {
 }
 
 pub fn panorama(title: impl Into<SharedString>, selected: impl IntoReactive<usize>) -> Panorama {
-    Panorama { title: title.into(), sections: Vec::new(), selected: selected.into_reactive(), section_width: 420., on_select: None }
+    Panorama {
+        title: title.into(),
+        sections: Vec::new(),
+        selected: selected.into_reactive(),
+        section_width: 420.,
+        on_select: None,
+    }
 }
 
 impl Panorama {
-    pub fn section<E: IntoElement>(mut self, header: impl Into<SharedString>, content: impl Fn() -> E + 'static) -> Self {
-        self.sections.push(PanoramaSection { header: header.into(), content: Rc::new(move || content().into_element()) });
+    pub fn section<E: IntoElement>(
+        mut self,
+        header: impl Into<SharedString>,
+        content: impl Fn() -> E + 'static,
+    ) -> Self {
+        self.sections
+            .push(PanoramaSection { header: header.into(), content: Rc::new(move || content().into_element()) });
         self
     }
     pub fn section_width(mut self, w: f32) -> Self {
@@ -114,7 +125,7 @@ impl IntoElement for Panorama {
                     let from = at.get();
                     let to = settle_target(from, sel, len, wraps);
                     // Lay the sections out around the whole move, then glide.
-                    slots_at.set((from + to) / 2.);
+                    slots_at.set(f32::midpoint(from, to));
                     at.set(to);
                     if reduced_motion() {
                         pos.set(to);
@@ -123,7 +134,11 @@ impl IntoElement for Panorama {
                         let _ = pos.timing(to, SETTLE, EXP6_OUT);
                         // A run back across the whole title takes a little longer.
                         let span = (sel as f32 - prev as f32).abs();
-                        let _ = title_pos.timing(sel as f32, SETTLE + TITLE_RUN_PER_SECTION * (span - 1.).max(0.), EXP6_OUT);
+                        let _ = title_pos.timing(
+                            sel as f32,
+                            SETTLE + TITLE_RUN_PER_SECTION * (span - 1.).max(0.),
+                            EXP6_OUT,
+                        );
                     }
                 });
             });
@@ -161,29 +176,35 @@ impl IntoElement for Panorama {
             .bottom_0()
             .left(u(PAGE_MARGIN))
             .bind_translate_x(&pos.mul(-sw).add(&intro.mul(INTRO_SECTIONS)))
-            .children(sections.iter().enumerate().map(|(ix, s)| {
-                let on_select = on_select.clone();
-                let section = view()
-                    .absolute()
-                    .top_0()
-                    .bottom_0()
-                    .left(move || u(section_slot(ix, slots_at.get(), len, wraps) * sw))
-                    .w(u(sw))
-                    .pr(u(PAGE_MARGIN))
-                    .child(
-                        label(SharedString::from(s.header.to_lowercase()))
-                            .font_family(FONT_FAMILY)
-                            .text_size(u(size::EXTRA_LARGE + 4.))
-                            .font_weight(LIGHT)
-                            .pb(u(10.))
-                            .text_color(move || palette().foreground),
-                    )
-                    .child(view().flex_1().min_h(px(0.)).child((s.content)()));
-                match on_select {
-                    Some(f) => section.cursor_pointer().on_press(move || f(ix)).into_element(),
-                    None => section.into_element(),
-                }
-            }).collect::<Vec<_>>());
+            .children(
+                sections
+                    .iter()
+                    .enumerate()
+                    .map(|(ix, s)| {
+                        let on_select = on_select.clone();
+                        let section = view()
+                            .absolute()
+                            .top_0()
+                            .bottom_0()
+                            .left(move || u(section_slot(ix, slots_at.get(), len, wraps) * sw))
+                            .w(u(sw))
+                            .pr(u(PAGE_MARGIN))
+                            .child(
+                                label(SharedString::from(s.header.to_lowercase()))
+                                    .font_family(FONT_FAMILY)
+                                    .text_size(u(size::EXTRA_LARGE + 4.))
+                                    .font_weight(LIGHT)
+                                    .pb(u(10.))
+                                    .text_color(move || palette().foreground),
+                            )
+                            .child(view().flex_1().min_h(px(0.)).child((s.content)()));
+                        match on_select {
+                            Some(f) => section.cursor_pointer().on_press(move || f(ix)).into_element(),
+                            None => section.into_element(),
+                        }
+                    })
+                    .collect::<Vec<_>>(),
+            );
         let root = view()
             .relative()
             .size_full()

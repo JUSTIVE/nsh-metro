@@ -395,40 +395,15 @@ pub struct Role {
 }
 
 pub const ROLES: [Role; 4] = [
-    Role {
-        id: RoleId::Pi,
-        name: "PI",
-        description: "Runs the facility. Signs off on biosafety.",
-    },
-    Role {
-        id: RoleId::Scientist,
-        name: "Scientist",
-        description: "Designs constructs, starts runs, reads assays.",
-    },
-    Role {
-        id: RoleId::Technician,
-        name: "Technician",
-        description: "Operates vessels and the freezer.",
-    },
-    Role {
-        id: RoleId::Observer,
-        name: "Observer",
-        description: "Read-only access to runs and results.",
-    },
+    Role { id: RoleId::Pi, name: "PI", description: "Runs the facility. Signs off on biosafety." },
+    Role { id: RoleId::Scientist, name: "Scientist", description: "Designs constructs, starts runs, reads assays." },
+    Role { id: RoleId::Technician, name: "Technician", description: "Operates vessels and the freezer." },
+    Role { id: RoleId::Observer, name: "Observer", description: "Read-only access to runs and results." },
 ];
 
-pub const VESSELS: [&str; 4] = [
-    "BR-250 · 250 mL",
-    "BR-2K · 2 L",
-    "FLASK · 500 mL baffled",
-    "PLATE · 96-well",
-];
-pub const CHASSIS_OPTIONS: [Chassis; 4] = [
-    Chassis::EColiK12,
-    Chassis::SCerevisiae,
-    Chassis::BSubtilis,
-    Chassis::PPastoris,
-];
+pub const VESSELS: [&str; 4] = ["BR-250 · 250 mL", "BR-2K · 2 L", "FLASK · 500 mL baffled", "PLATE · 96-well"];
+pub const CHASSIS_OPTIONS: [Chassis; 4] =
+    [Chassis::EColiK12, Chassis::SCerevisiae, Chassis::BSubtilis, Chassis::PPastoris];
 
 #[derive(Clone, Debug, PartialEq)]
 pub struct FacilityData {
@@ -461,38 +436,15 @@ fn s(v: &str) -> String {
 }
 
 fn strs(v: &[&str]) -> Vec<String> {
-    v.iter().map(|x| x.to_string()).collect()
+    v.iter().map(ToString::to_string).collect()
 }
 
 fn member(id: &str, name: &str, email: &str, role: RoleId, joined: &str) -> Member {
-    Member {
-        id: s(id),
-        name: s(name),
-        email: s(email),
-        role,
-        joined: s(joined),
-        left: None,
-    }
+    Member { id: s(id), name: s(name), email: s(email), role, joined: s(joined), left: None }
 }
 
-fn construct(
-    id: &str,
-    code: &str,
-    name: &str,
-    bp: i64,
-    gc: f64,
-    status: ConstructStatus,
-    parts: &[&str],
-) -> Construct {
-    Construct {
-        id: s(id),
-        code: s(code),
-        name: s(name),
-        bp,
-        gc,
-        status,
-        parts: strs(parts),
-    }
+fn construct(id: &str, code: &str, name: &str, bp: i64, gc: f64, status: ConstructStatus, parts: &[&str]) -> Construct {
+    Construct { id: s(id), code: s(code), name: s(name), bp, gc, status, parts: strs(parts) }
 }
 
 #[allow(clippy::too_many_arguments)]
@@ -553,394 +505,78 @@ fn run(
     }
 }
 
-fn assay(
-    id: &str,
-    run_id: &str,
-    kind: AssayKind,
-    metric: &str,
-    value: &str,
-    verdict: Verdict,
-) -> Assay {
-    Assay {
-        id: s(id),
-        run_id: s(run_id),
-        kind,
-        metric: s(metric),
-        value: s(value),
-        verdict,
-    }
+fn assay(id: &str, run_id: &str, kind: AssayKind, metric: &str, value: &str, verdict: Verdict) -> Assay {
+    Assay { id: s(id), run_id: s(run_id), kind, metric: s(metric), value: s(value), verdict }
 }
 
 fn sample(id: &str, code: &str, strain_id: &str, form: SampleForm, frozen_at: &str) -> Sample {
-    Sample {
-        id: s(id),
-        code: s(code),
-        strain_id: s(strain_id),
-        form,
-        frozen_at: s(frozen_at),
-    }
+    Sample { id: s(id), code: s(code), strain_id: s(strain_id), form, frozen_at: s(frozen_at) }
 }
 
 fn seoul_members() -> Vec<Member> {
-    use RoleId::*;
+    use RoleId::{Observer, Pi, Scientist, Technician};
     vec![
         member("m1", "Ben Park", "ben@noativ.bio", Pi, "Mar 2019"),
         member("m2", "Yuna Seo", "yuna@noativ.bio", Scientist, "Aug 2019"),
-        member(
-            "m3",
-            "Dmitri Volkov",
-            "dmitri@noativ.bio",
-            Scientist,
-            "Feb 2020",
-        ),
+        member("m3", "Dmitri Volkov", "dmitri@noativ.bio", Scientist, "Feb 2020"),
         member("m4", "Hana Cho", "hana@noativ.bio", Technician, "Jun 2021"),
-        member(
-            "m5",
-            "Marco Reyes",
-            "marco@noativ.bio",
-            Technician,
-            "Mar 2022",
-        ),
+        member("m5", "Marco Reyes", "marco@noativ.bio", Technician, "Mar 2022"),
         member("m6", "Iris Tan", "iris@noativ.bio", Scientist, "Nov 2022"),
         member("m7", "Noor Haddad", "noor@noativ.bio", Observer, "Sep 2023"),
-        member(
-            "m8",
-            "Felix Braun",
-            "felix@noativ.bio",
-            Scientist,
-            "May 2024",
-        ),
+        member("m8", "Felix Braun", "felix@noativ.bio", Scientist, "May 2024"),
     ]
 }
 
 fn seoul_constructs() -> Vec<Construct> {
-    use ConstructStatus::*;
+    use ConstructStatus::{Design, Synthesis, Verified};
     vec![
-        construct(
-            "c1",
-            "pNV-380",
-            "limonene pathway v3",
-            9421,
-            52.4,
-            Verified,
-            &["pTrc", "GPPS", "LS", "T7te"],
-        ),
-        construct(
-            "c2",
-            "pNV-379",
-            "violacein operon",
-            7286,
-            58.1,
-            Verified,
-            &["pBAD", "vioABCDE", "rrnB"],
-        ),
-        construct(
-            "c3",
-            "pNV-378",
-            "PHB accumulation",
-            5804,
-            55.9,
-            Synthesis,
-            &["pLac", "phaCAB", "T1"],
-        ),
-        construct(
-            "c4",
-            "pNV-377",
-            "heme sensor v2",
-            4212,
-            49.7,
-            Design,
-            &["pTet", "hrtR", "sfGFP"],
-        ),
-        construct(
-            "c5",
-            "pNV-376",
-            "squalene boost",
-            11212,
-            54.2,
-            Verified,
-            &["pGal", "ERG9", "ERG1", "tADH1"],
-        ),
-        construct(
-            "c6",
-            "pNV-375",
-            "nitrogenase cluster",
-            23480,
-            61.3,
-            Synthesis,
-            &["pNif", "nifHDK", "nifENB"],
-        ),
-        construct(
-            "c7",
-            "pNV-374",
-            "chitinase secretion",
-            6120,
-            46.8,
-            Verified,
-            &["pAOX1", "α-MF", "chiA"],
-        ),
-        construct(
-            "c8",
-            "pNV-373",
-            "indigo dye module",
-            5310,
-            51.5,
-            Design,
-            &["pT7", "fmo", "trpBA"],
-        ),
-        construct(
-            "c9",
-            "pNV-372",
-            "osmotic stress shield",
-            4890,
-            50.2,
-            Verified,
-            &["pOsmY", "otsAB", "T7te"],
-        ),
-        construct(
-            "c10",
-            "pNV-371",
-            "caffeine degrader",
-            8130,
-            57.6,
-            Synthesis,
-            &["pCsp", "ndmABCD", "rrnB"],
-        ),
+        construct("c1", "pNV-380", "limonene pathway v3", 9421, 52.4, Verified, &["pTrc", "GPPS", "LS", "T7te"]),
+        construct("c2", "pNV-379", "violacein operon", 7286, 58.1, Verified, &["pBAD", "vioABCDE", "rrnB"]),
+        construct("c3", "pNV-378", "PHB accumulation", 5804, 55.9, Synthesis, &["pLac", "phaCAB", "T1"]),
+        construct("c4", "pNV-377", "heme sensor v2", 4212, 49.7, Design, &["pTet", "hrtR", "sfGFP"]),
+        construct("c5", "pNV-376", "squalene boost", 11212, 54.2, Verified, &["pGal", "ERG9", "ERG1", "tADH1"]),
+        construct("c6", "pNV-375", "nitrogenase cluster", 23480, 61.3, Synthesis, &["pNif", "nifHDK", "nifENB"]),
+        construct("c7", "pNV-374", "chitinase secretion", 6120, 46.8, Verified, &["pAOX1", "α-MF", "chiA"]),
+        construct("c8", "pNV-373", "indigo dye module", 5310, 51.5, Design, &["pT7", "fmo", "trpBA"]),
+        construct("c9", "pNV-372", "osmotic stress shield", 4890, 50.2, Verified, &["pOsmY", "otsAB", "T7te"]),
+        construct("c10", "pNV-371", "caffeine degrader", 8130, 57.6, Synthesis, &["pCsp", "ndmABCD", "rrnB"]),
     ]
 }
 
 fn seoul_strains() -> Vec<Strain> {
-    use Chassis::*;
-    use StrainStatus::*;
+    use Chassis::{BSubtilis, EColiK12, PPastoris, SCerevisiae};
+    use StrainStatus::{Archived, Culturing, Sequencing, Validated};
     vec![
-        strain(
-            "s1",
-            "NV-648",
-            "limonene HP",
-            EColiK12,
-            Culturing,
-            14,
-            87,
-            "Yuna Seo",
-            "18 minutes ago",
-            &["c1", "c9"],
-        ),
-        strain(
-            "s2",
-            "NV-647",
-            "violacein prod",
-            EColiK12,
-            Validated,
-            9,
-            74,
-            "Dmitri Volkov",
-            "2 hours ago",
-            &["c2"],
-        ),
-        strain(
-            "s3",
-            "NV-646",
-            "PHB packrat",
-            BSubtilis,
-            Sequencing,
-            4,
-            61,
-            "Iris Tan",
-            "yesterday",
-            &["c3"],
-        ),
-        strain(
-            "s4",
-            "NV-645",
-            "heme reporter",
-            EColiK12,
-            Culturing,
-            2,
-            55,
-            "Felix Braun",
-            "41 minutes ago",
-            &["c4"],
-        ),
-        strain(
-            "s5",
-            "NV-644",
-            "squalene max",
-            SCerevisiae,
-            Validated,
-            21,
-            92,
-            "Yuna Seo",
-            "3 days ago",
-            &["c5"],
-        ),
-        strain(
-            "s6",
-            "NV-643",
-            "nif tester",
-            EColiK12,
-            Sequencing,
-            1,
-            38,
-            "Dmitri Volkov",
-            "5 hours ago",
-            &["c6"],
-        ),
-        strain(
-            "s7",
-            "NV-642",
-            "chitin cutter",
-            PPastoris,
-            Validated,
-            17,
-            81,
-            "Iris Tan",
-            "last week",
-            &["c7"],
-        ),
-        strain(
-            "s8",
-            "NV-641",
-            "indigo sketch",
-            EColiK12,
-            Archived,
-            3,
-            22,
-            "Felix Braun",
-            "2 weeks ago",
-            &["c8"],
-        ),
+        strain("s1", "NV-648", "limonene HP", EColiK12, Culturing, 14, 87, "Yuna Seo", "18 minutes ago", &["c1", "c9"]),
+        strain("s2", "NV-647", "violacein prod", EColiK12, Validated, 9, 74, "Dmitri Volkov", "2 hours ago", &["c2"]),
+        strain("s3", "NV-646", "PHB packrat", BSubtilis, Sequencing, 4, 61, "Iris Tan", "yesterday", &["c3"]),
+        strain("s4", "NV-645", "heme reporter", EColiK12, Culturing, 2, 55, "Felix Braun", "41 minutes ago", &["c4"]),
+        strain("s5", "NV-644", "squalene max", SCerevisiae, Validated, 21, 92, "Yuna Seo", "3 days ago", &["c5"]),
+        strain("s6", "NV-643", "nif tester", EColiK12, Sequencing, 1, 38, "Dmitri Volkov", "5 hours ago", &["c6"]),
+        strain("s7", "NV-642", "chitin cutter", PPastoris, Validated, 17, 81, "Iris Tan", "last week", &["c7"]),
+        strain("s8", "NV-641", "indigo sketch", EColiK12, Archived, 3, 22, "Felix Braun", "2 weeks ago", &["c8"]),
     ]
 }
 
 fn seoul_runs() -> Vec<Run> {
-    use RunPhase::*;
+    use RunPhase::{Failed, Harvested, Lag, Log, Stationary};
     vec![
-        run(
-            "r1",
-            "R-4712",
-            "s1",
-            "BR-2K · 2 L",
-            Log,
-            4.8,
-            "1.9 g/L",
-            "18 minutes ago",
-            "—",
-            "Hana Cho",
-        ),
-        run(
-            "r2",
-            "R-4711",
-            "s4",
-            "PLATE · 96-well",
-            Lag,
-            0.3,
-            "—",
-            "41 minutes ago",
-            "—",
-            "Felix Braun",
-        ),
-        run(
-            "r3",
-            "R-4710",
-            "s2",
-            "BR-250 · 250 mL",
-            Harvested,
-            9.1,
-            "3.4 g/L",
-            "yesterday",
-            "21h 12m",
-            "Hana Cho",
-        ),
-        run(
-            "r4",
-            "R-4709",
-            "s5",
-            "BR-2K · 2 L",
-            Harvested,
-            11.6,
-            "6.2 g/L",
-            "2 days ago",
-            "38h 03m",
-            "Marco Reyes",
-        ),
-        run(
-            "r5",
-            "R-4708",
-            "s6",
-            "FLASK · 500 mL baffled",
-            Failed,
-            1.1,
-            "0",
-            "3 days ago",
-            "9h 44m",
-            "Marco Reyes",
-        ),
-        run(
-            "r6",
-            "R-4707",
-            "s1",
-            "BR-250 · 250 mL",
-            Harvested,
-            8.4,
-            "1.6 g/L",
-            "4 days ago",
-            "19h 51m",
-            "Hana Cho",
-        ),
-        run(
-            "r7",
-            "R-4706",
-            "s7",
-            "BR-2K · 2 L",
-            Harvested,
-            14.2,
-            "8.8 g/L",
-            "last week",
-            "44h 20m",
-            "Marco Reyes",
-        ),
-        run(
-            "r8",
-            "R-4705",
-            "s3",
-            "FLASK · 500 mL baffled",
-            Stationary,
-            6.7,
-            "0.8 g/L",
-            "yesterday",
-            "—",
-            "Hana Cho",
-        ),
-        run(
-            "r9",
-            "R-4704",
-            "s2",
-            "BR-250 · 250 mL",
-            Harvested,
-            8.8,
-            "3.1 g/L",
-            "last week",
-            "20h 40m",
-            "Felix Braun",
-        ),
-        run(
-            "r10",
-            "R-4703",
-            "s5",
-            "BR-2K · 2 L",
-            Harvested,
-            10.9,
-            "5.7 g/L",
-            "2 weeks ago",
-            "36h 55m",
-            "Hana Cho",
-        ),
+        run("r1", "R-4712", "s1", "BR-2K · 2 L", Log, 4.8, "1.9 g/L", "18 minutes ago", "—", "Hana Cho"),
+        run("r2", "R-4711", "s4", "PLATE · 96-well", Lag, 0.3, "—", "41 minutes ago", "—", "Felix Braun"),
+        run("r3", "R-4710", "s2", "BR-250 · 250 mL", Harvested, 9.1, "3.4 g/L", "yesterday", "21h 12m", "Hana Cho"),
+        run("r4", "R-4709", "s5", "BR-2K · 2 L", Harvested, 11.6, "6.2 g/L", "2 days ago", "38h 03m", "Marco Reyes"),
+        run("r5", "R-4708", "s6", "FLASK · 500 mL baffled", Failed, 1.1, "0", "3 days ago", "9h 44m", "Marco Reyes"),
+        run("r6", "R-4707", "s1", "BR-250 · 250 mL", Harvested, 8.4, "1.6 g/L", "4 days ago", "19h 51m", "Hana Cho"),
+        run("r7", "R-4706", "s7", "BR-2K · 2 L", Harvested, 14.2, "8.8 g/L", "last week", "44h 20m", "Marco Reyes"),
+        run("r8", "R-4705", "s3", "FLASK · 500 mL baffled", Stationary, 6.7, "0.8 g/L", "yesterday", "—", "Hana Cho"),
+        run("r9", "R-4704", "s2", "BR-250 · 250 mL", Harvested, 8.8, "3.1 g/L", "last week", "20h 40m", "Felix Braun"),
+        run("r10", "R-4703", "s5", "BR-2K · 2 L", Harvested, 10.9, "5.7 g/L", "2 weeks ago", "36h 55m", "Hana Cho"),
     ]
 }
 
 fn seoul_assays() -> Vec<Assay> {
-    use AssayKind::*;
-    use Verdict::*;
+    use AssayKind::{Hplc, LcMs, PlateReader};
+    use Verdict::{Flag, Pass};
     vec![
         assay("a1", "r3", Hplc, "violacein titer", "3.4 g/L", Pass),
         assay("a2", "r3", PlateReader, "OD600 endpoint", "9.1", Pass),
@@ -954,7 +590,7 @@ fn seoul_assays() -> Vec<Assay> {
 }
 
 fn seoul_samples() -> Vec<Sample> {
-    use SampleForm::*;
+    use SampleForm::{Glycerol, Pellet, Plasmid};
     vec![
         sample("g1", "GLY-2201", "s1", Glycerol, "2 weeks ago"),
         sample("g2", "GLY-2202", "s1", Glycerol, "2 weeks ago"),
@@ -989,9 +625,7 @@ const DAY: i64 = 86_400_000;
 /// see the note above.
 pub const BOARD_EPOCH: i64 = days_from_civil(2026, 8, 26) * DAY;
 
-const MONTHS: [&str; 12] = [
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-];
+const MONTHS: [&str; 12] = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /// Recent work reads as relative time; older work gets a date, the way a lab
 /// notebook does.
@@ -1066,16 +700,13 @@ const PRODUCT_STEMS: [&str; 34] = [
     "collagen",
     "insulin",
 ];
-const STRAIN_SUFFIX: [&str; 12] = [
-    "HP", "v2", "v3", "v4", "lite", "max", "delta", "sprint", "core", "alt", "X", "omega",
-];
-const PROMOTERS: [&str; 10] = [
-    "pTrc", "pBAD", "pLac", "pTet", "pT7", "pGal", "pAOX1", "pGAP", "pOsmY", "pCsp",
-];
+const STRAIN_SUFFIX: [&str; 12] =
+    ["HP", "v2", "v3", "v4", "lite", "max", "delta", "sprint", "core", "alt", "X", "omega"];
+const PROMOTERS: [&str; 10] = ["pTrc", "pBAD", "pLac", "pTet", "pT7", "pGal", "pAOX1", "pGAP", "pOsmY", "pCsp"];
 const TERMINATORS: [&str; 5] = ["T7te", "rrnB", "T1", "tADH1", "tCYC1"];
 const CDS: [&str; 14] = [
-    "GPPS", "LS", "vioABCDE", "phaCAB", "ERG9", "chiA", "fmo", "ndmABCD", "crtEBI", "aroG", "ilvC",
-    "mvaS", "idi", "tHMG1",
+    "GPPS", "LS", "vioABCDE", "phaCAB", "ERG9", "chiA", "fmo", "ndmABCD", "crtEBI", "aroG", "ilvC", "mvaS", "idi",
+    "tHMG1",
 ];
 const STRAIN_STATES: [StrainStatus; 5] = [
     StrainStatus::Culturing,
@@ -1084,26 +715,13 @@ const STRAIN_STATES: [StrainStatus; 5] = [
     StrainStatus::Validated,
     StrainStatus::Archived,
 ];
-const CONSTRUCT_STATES: [ConstructStatus; 4] = [
-    ConstructStatus::Design,
-    ConstructStatus::Synthesis,
-    ConstructStatus::Verified,
-    ConstructStatus::Verified,
-];
-const RUN_PHASES: [RunPhase; 5] = [
-    RunPhase::Harvested,
-    RunPhase::Harvested,
-    RunPhase::Harvested,
-    RunPhase::Harvested,
-    RunPhase::Failed,
-];
+const CONSTRUCT_STATES: [ConstructStatus; 4] =
+    [ConstructStatus::Design, ConstructStatus::Synthesis, ConstructStatus::Verified, ConstructStatus::Verified];
+const RUN_PHASES: [RunPhase; 5] =
+    [RunPhase::Harvested, RunPhase::Harvested, RunPhase::Harvested, RunPhase::Harvested, RunPhase::Failed];
 const ASSAY_KINDS: [AssayKind; 3] = [AssayKind::Hplc, AssayKind::LcMs, AssayKind::PlateReader];
-const SAMPLE_FORMS: [SampleForm; 4] = [
-    SampleForm::Glycerol,
-    SampleForm::Glycerol,
-    SampleForm::Plasmid,
-    SampleForm::Pellet,
-];
+const SAMPLE_FORMS: [SampleForm; 4] =
+    [SampleForm::Glycerol, SampleForm::Glycerol, SampleForm::Plasmid, SampleForm::Pellet];
 const PEOPLE: [&str; 48] = [
     "Yuna Seo",
     "Dmitri Volkov",
@@ -1157,22 +775,14 @@ const PEOPLE: [&str; 48] = [
 
 /// Codes count downward from the newest record, like a real ledger.
 fn seq_code(prefix: &str, top: i64, index: i64, width: usize) -> String {
-    format!(
-        "{}{}",
-        prefix,
-        pad_start(&(top - index).max(0).to_string(), width)
-    )
+    format!("{}{}", prefix, pad_start(&(top - index).max(0).to_string(), width))
 }
 
 /// Work is not evenly spread over a company's life: the first years are thin,
 /// the last two are dense. This maps record index → days ago with that curve,
 /// so scrolling back through the ledger feels like scrolling back through time.
 fn age_curve(index: usize, count: usize, span_days: f64) -> i64 {
-    let t = if count <= 1 {
-        0.0
-    } else {
-        index as f64 / (count - 1) as f64
-    };
+    let t = if count <= 1 { 0.0 } else { index as f64 / (count - 1) as f64 };
     js_round(span_days * t.powf(1.6))
 }
 
@@ -1182,18 +792,10 @@ fn gen_constructs(ns: &str, count: i64, top_number: i64, span_days: i64) -> Vec<
         .map(|i| {
             let h = hash_text(&format!("{ns}-construct-{i}"));
             let stem = pick(&PRODUCT_STEMS, h);
-            let kind = pick(
-                &[
-                    "module", "operon", "cassette", "pathway", "reporter", "library",
-                ],
-                sr(h, 3),
-            );
+            let kind = pick(&["module", "operon", "cassette", "pathway", "reporter", "library"], sr(h, 3));
             Construct {
                 id: format!("{ns}-c{}", i + 100),
-                code: format!(
-                    "pNV-{}",
-                    pad_start(&(top_number - i as i64).max(1).to_string(), 3)
-                ),
+                code: format!("pNV-{}", pad_start(&(top_number - i as i64).max(1).to_string(), 3)),
                 name: format!("{stem} {kind} v{}", 1 + h % 5),
                 bp: 3200 + (h % 210) * 100,
                 gc: to_fixed_num(43.0 + (h % 220) as f64 / 10.0, 1),
@@ -1214,13 +816,7 @@ fn gen_constructs(ns: &str, count: i64, top_number: i64, span_days: i64) -> Vec<
         .collect()
 }
 
-fn gen_strains(
-    ns: &str,
-    count: i64,
-    top_code: i64,
-    span_days: i64,
-    constructs: &[Construct],
-) -> Vec<Strain> {
+fn gen_strains(ns: &str, count: i64, top_code: i64, span_days: i64, constructs: &[Construct]) -> Vec<Strain> {
     let count = count.max(0) as usize;
     (0..count)
         .map(|i| {
@@ -1230,23 +826,12 @@ fn gen_strains(
             let second = &constructs[idx(sr(h, 4), constructs.len())];
             Strain {
                 id: format!("{ns}-s{}", i + 100),
-                code: format!(
-                    "NV-{}",
-                    pad_start(&(top_code - i as i64).max(1).to_string(), 3)
-                ),
-                name: format!(
-                    "{} {}",
-                    pick(&PRODUCT_STEMS, sr(h, 1)),
-                    pick(&STRAIN_SUFFIX, sr(h, 7))
-                ),
+                code: format!("NV-{}", pad_start(&(top_code - i as i64).max(1).to_string(), 3)),
+                name: format!("{} {}", pick(&PRODUCT_STEMS, sr(h, 1)), pick(&STRAIN_SUFFIX, sr(h, 7))),
                 chassis: pick(&CHASSIS_OPTIONS, sr(h, 3)),
                 // A strain older than a year is retired unless it earned its keep.
                 status: if days_ago > 420 {
-                    if h % 5 == 0 {
-                        StrainStatus::Validated
-                    } else {
-                        StrainStatus::Archived
-                    }
+                    if h % 5 == 0 { StrainStatus::Validated } else { StrainStatus::Archived }
                 } else {
                     pick(&STRAIN_STATES, sr(h, 5))
                 },
@@ -1279,11 +864,7 @@ fn gen_runs(ns: &str, count: i64, top_code: i64, span_days: i64, strains: &[Stra
             } else {
                 pick(&RUN_PHASES, sr(h, 3))
             };
-            let od = if phase == RunPhase::Lag {
-                0.2 + (h % 8) as f64 / 10.0
-            } else {
-                2.0 + (h % 130) as f64 / 10.0
-            };
+            let od = if phase == RunPhase::Lag { 0.2 + (h % 8) as f64 / 10.0 } else { 2.0 + (h % 130) as f64 / 10.0 };
             let finished = phase == RunPhase::Harvested || phase == RunPhase::Failed;
             Run {
                 id: format!("{ns}-r{}", i + 100),
@@ -1320,21 +901,13 @@ fn gen_assays(ns: &str, runs: &[Run]) -> Vec<Assay> {
             continue;
         }
         let h = hash_text(&format!("{ns}-assay-{}", run.id));
-        let count = if run.phase == RunPhase::Failed {
-            1
-        } else {
-            1 + h % 2
-        };
+        let count = if run.phase == RunPhase::Failed { 1 } else { 1 + h % 2 };
         for k in 0..count {
             let kind = pick(&ASSAY_KINDS, h + k);
             let metric = if kind == AssayKind::PlateReader {
                 s("OD600 endpoint")
             } else {
-                format!(
-                    "{} {}",
-                    pick(&PRODUCT_STEMS, h + k * 3),
-                    pick(&["titer", "purity", "activity"], h + k)
-                )
+                format!("{} {}", pick(&PRODUCT_STEMS, h + k * 3), pick(&["titer", "purity", "activity"], h + k))
             };
             let value = match kind {
                 AssayKind::PlateReader => to_fixed(run.od600, 1),
@@ -1359,13 +932,7 @@ fn gen_assays(ns: &str, runs: &[Run]) -> Vec<Assay> {
     out
 }
 
-fn gen_samples(
-    ns: &str,
-    count: i64,
-    top_code: i64,
-    span_days: i64,
-    strains: &[Strain],
-) -> Vec<Sample> {
+fn gen_samples(ns: &str, count: i64, top_code: i64, span_days: i64, strains: &[Strain]) -> Vec<Sample> {
     let count = count.max(0) as usize;
     (0..count)
         .map(|i| {
@@ -1392,12 +959,7 @@ fn gen_samples(
 /// audit actually finds.
 pub const BOX_SLOTS: usize = 81;
 
-fn gen_racks(
-    ns: &str,
-    rack_count: usize,
-    boxes_per_rack: usize,
-    samples: &[Sample],
-) -> Vec<FreezerRack> {
+fn gen_racks(ns: &str, rack_count: usize, boxes_per_rack: usize, samples: &[Sample]) -> Vec<FreezerRack> {
     // Oldest samples went in first, so fill the racks from the back of the list.
     let queue: Vec<&Sample> = samples.iter().rev().collect();
     let mut cursor = 0usize;
@@ -1414,8 +976,8 @@ fn gen_racks(
                     );
                     let slots = (0..BOX_SLOTS)
                         .map(|slot| {
-                            let taken = ((h + slot as i64 * 37) % 100) as f64 / 100.0 < fill_rate
-                                && cursor < queue.len();
+                            let taken =
+                                ((h + slot as i64 * 37) % 100) as f64 / 100.0 < fill_rate && cursor < queue.len();
                             if !taken {
                                 return None;
                             }
@@ -1425,21 +987,13 @@ fn gen_racks(
                         })
                         .collect();
                     let id = format!("{letter}{}", box_index + 1);
-                    FreezerBox {
-                        id: id.clone(),
-                        label: id,
-                        slots,
-                    }
+                    FreezerBox { id: id.clone(), label: id, slots }
                 })
                 .collect();
             FreezerRack {
                 id: format!("rack-{}", letter.to_ascii_lowercase()),
                 name: format!("Rack {letter}"),
-                temp: s(if rack_index == rack_count - 1 {
-                    "−20 °C"
-                } else {
-                    "−80 °C"
-                }),
+                temp: s(if rack_index == rack_count - 1 { "−20 °C" } else { "−80 °C" }),
                 boxes,
             }
         })
@@ -1448,17 +1002,12 @@ fn gen_racks(
 
 /// Seven years of hiring means a roster *and* an alumni list.
 fn gen_members(ns: &str, count: usize, span_days: i64, existing: Vec<Member>) -> Vec<Member> {
-    let pool: Vec<&str> = PEOPLE
-        .iter()
-        .copied()
-        .filter(|name| !existing.iter().any(|m| m.name == *name))
-        .collect();
+    let pool: Vec<&str> = PEOPLE.iter().copied().filter(|name| !existing.iter().any(|m| m.name == *name)).collect();
     let extra_count = count.saturating_sub(existing.len());
     let extra: Vec<Member> = (0..extra_count)
         .map(|i| {
             let h = hash_text(&format!("{ns}-member-{i}"));
-            let joined_days_ago =
-                js_round(span_days as f64 * (0.08 + ((h % 90) as f64 / 100.0) * 0.9));
+            let joined_days_ago = js_round(span_days as f64 * (0.08 + ((h % 90) as f64 / 100.0) * 0.9));
             let name = pool[i % pool.len()];
             let handle = name.split(' ').next().unwrap_or("").to_lowercase();
             // Turnover rises with tenure: the earliest hires are mostly alumni now.
@@ -1470,23 +1019,8 @@ fn gen_members(ns: &str, count: usize, span_days: i64, existing: Vec<Member>) ->
             Member {
                 id: format!("{ns}-m{}", i + 100),
                 name: s(name),
-                email: format!(
-                    "{handle}{}@noativ.bio",
-                    if i >= pool.len() {
-                        i.to_string()
-                    } else {
-                        String::new()
-                    }
-                ),
-                role: pick(
-                    &[
-                        RoleId::Scientist,
-                        RoleId::Scientist,
-                        RoleId::Technician,
-                        RoleId::Observer,
-                    ],
-                    h,
-                ),
+                email: format!("{handle}{}@noativ.bio", if i >= pool.len() { i.to_string() } else { String::new() }),
+                role: pick(&[RoleId::Scientist, RoleId::Scientist, RoleId::Technician, RoleId::Observer], h),
                 joined: month_stamp(joined_days_ago),
                 left,
             }
@@ -1524,11 +1058,7 @@ fn gen_instruments(ns: &str) -> Vec<Instrument> {
     for (kind, vessel, count) in INSTRUMENT_KINDS {
         for i in 0..count {
             let h = hash_text(&format!("{ns}-inst-{kind}-{i}"));
-            let state = if out.len() < 3 {
-                InstrumentState::Running
-            } else {
-                pick(&INSTRUMENT_STATES, h)
-            };
+            let state = if out.len() < 3 { InstrumentState::Running } else { pick(&INSTRUMENT_STATES, h) };
             out.push(Instrument {
                 id: format!("{ns}-i-{kind}-{i}"),
                 code: format!("{kind}-{}", pad_start(&(i + 1).to_string(), 2)),
@@ -1546,12 +1076,7 @@ fn gen_instruments(ns: &str) -> Vec<Instrument> {
 pub const DECK_DAYS: i64 = 21;
 pub const DECK_TODAY: i64 = 13;
 
-fn gen_deck(
-    ns: &str,
-    instruments: &[Instrument],
-    runs: &[Run],
-    strains: &[Strain],
-) -> Vec<DeckBlock> {
+fn gen_deck(ns: &str, instruments: &[Instrument], runs: &[Run], strains: &[Strain]) -> Vec<DeckBlock> {
     let mut out: Vec<DeckBlock> = Vec::new();
     let strain_index: HashMap<&str, &Strain> = {
         // `Array.prototype.find` returns the first match, so keep the first.
@@ -1576,11 +1101,7 @@ fn gen_deck(
                 DeckKind::Run
             };
             let days = if kind == DeckKind::Run { 1 + h % 4 } else { 1 };
-            let run = if kind == DeckKind::Run {
-                Some(&runs[idx(sr(h, 3), runs.len())])
-            } else {
-                None
-            };
+            let run = if kind == DeckKind::Run { Some(&runs[idx(sr(h, 3), runs.len())]) } else { None };
             let strain = run.and_then(|r| strain_index.get(r.strain_id.as_str()).copied());
             out.push(DeckBlock {
                 id: format!("{ns}-d{lane}-{slot}"),
@@ -1593,8 +1114,8 @@ fn gen_deck(
                 label: match kind {
                     DeckKind::Run => format!(
                         "{} · {}",
-                        run.map(|r| r.code.as_str()).unwrap_or(""),
-                        strain.map(|st| st.code.as_str()).unwrap_or("")
+                        run.map_or("", |r| r.code.as_str()),
+                        strain.map_or("", |st| st.code.as_str())
                     ),
                     DeckKind::Cip => s("CIP"),
                     DeckKind::Maintenance => s("PM"),
@@ -1645,12 +1166,9 @@ fn incident_titles(area: IncidentArea) -> [&'static str; 4] {
             "library prep bead loss",
             "basecall pipeline stalled",
         ],
-        IncidentArea::Safety => [
-            "sharps container overfilled",
-            "BSC airflow below setpoint",
-            "spill kit expired",
-            "eyewash flush overdue",
-        ],
+        IncidentArea::Safety => {
+            ["sharps container overfilled", "BSC airflow below setpoint", "spill kit expired", "eyewash flush overdue"]
+        }
         IncidentArea::Facility => [
             "DI water loop pressure drop",
             "UPS transferred to battery",
@@ -1682,23 +1200,12 @@ fn gen_incidents(ns: &str, count: usize, span_days: i64, runs: &[Run]) -> Vec<In
             } else if days_ago > 14 {
                 pick(&[IncidentStatus::Closed, IncidentStatus::Capa], sr(h, 5))
             } else if days_ago > 4 {
-                pick(
-                    &[IncidentStatus::Investigating, IncidentStatus::Capa],
-                    sr(h, 6),
-                )
+                pick(&[IncidentStatus::Investigating, IncidentStatus::Capa], sr(h, 6))
             } else {
                 IncidentStatus::Open
             };
-            let run = if h % 3 == 0 {
-                Some(&runs[idx(sr(h, 4), runs.len())])
-            } else {
-                None
-            };
-            let age = if status == IncidentStatus::Closed {
-                2 + h % 21
-            } else {
-                days_ago.clamp(1, 30)
-            };
+            let run = if h % 3 == 0 { Some(&runs[idx(sr(h, 4), runs.len())]) } else { None };
+            let age = if status == IncidentStatus::Closed { 2 + h % 21 } else { days_ago.clamp(1, 30) };
             let title = pick(&incident_titles(area), sr(h, 2));
             let mut timeline = vec![
                 TimelineEntry {
@@ -1709,11 +1216,7 @@ fn gen_incidents(ns: &str, count: usize, span_days: i64, runs: &[Run]) -> Vec<In
                     at: stamp((days_ago - 1).max(0)),
                     text: format!(
                         "Area quarantined, {}",
-                        if severity == IncidentSeverity::Critical {
-                            "floor lead paged"
-                        } else {
-                            "shift lead notified"
-                        }
+                        if severity == IncidentSeverity::Critical { "floor lead paged" } else { "shift lead notified" }
                     ),
                 },
             ];
@@ -1728,15 +1231,7 @@ fn gen_incidents(ns: &str, count: usize, span_days: i64, runs: &[Run]) -> Vec<In
                     at: stamp((days_ago - 4).max(0)),
                     text: format!(
                         "CAPA filed — {}",
-                        pick(
-                            &[
-                                "SOP revised",
-                                "probe replaced",
-                                "training re-run",
-                                "PM interval halved"
-                            ],
-                            sr(h, 7)
-                        )
+                        pick(&["SOP revised", "probe replaced", "training re-run", "PM interval halved"], sr(h, 7))
                     ),
                 });
             }
@@ -1748,10 +1243,7 @@ fn gen_incidents(ns: &str, count: usize, span_days: i64, runs: &[Run]) -> Vec<In
             }
             Incident {
                 id: format!("{ns}-inc{}", i + 100),
-                code: format!(
-                    "DEV-{}",
-                    pad_start(&(2400 - i as i64).max(1).to_string(), 4)
-                ),
+                code: format!("DEV-{}", pad_start(&(2400 - i as i64).max(1).to_string(), 4)),
                 title: s(title),
                 area,
                 severity,
@@ -1789,14 +1281,7 @@ const REAGENTS: [(&str, &str, f64, &str); 18] = [
     ("Plasmid midiprep kit", "preps", 100.0, "mol bio"),
     ("Agarose LE", "kg", 5.0, "mol bio"),
 ];
-const VENDORS: [&str; 6] = [
-    "Kyoto Bio",
-    "Meridian Labs",
-    "Halcyon Reagents",
-    "Nordwerk",
-    "Sable Chem",
-    "Tessellate",
-];
+const VENDORS: [&str; 6] = ["Kyoto Bio", "Meridian Labs", "Halcyon Reagents", "Nordwerk", "Sable Chem", "Tessellate"];
 const SHELVES: [&str; 6] = ["MK-A", "MK-B", "MK-C", "COLD-1", "COLD-2", "FLAM-1"];
 
 fn gen_lots(ns: &str, count: usize) -> Vec<ReagentLot> {
@@ -1806,24 +1291,16 @@ fn gen_lots(ns: &str, count: usize) -> Vec<ReagentLot> {
             let (name, unit, capacity, grade) = pick(&REAGENTS, h);
             let shelf_total = 180 + (h % 5) * 180;
             // Newest lots first; the tail of the list is old stock and expired stock.
-            let shelf_days =
-                js_round((shelf_total - age_curve(i, count, shelf_total as f64 * 1.25)) as f64);
+            let shelf_days = js_round((shelf_total - age_curve(i, count, shelf_total as f64 * 1.25)) as f64);
             let qty = to_fixed_num(capacity * ((sr(h, 3) % 100) as f64 / 100.0).powf(1.4), 2);
             ReagentLot {
                 id: format!("{ns}-lot{}", i + 100),
-                code: format!(
-                    "LOT-{}",
-                    pad_start(&(7400 - i as i64 * 3).max(100).to_string(), 4)
-                ),
+                code: format!("LOT-{}", pad_start(&(7400 - i as i64 * 3).max(100).to_string(), 4)),
                 name: s(name),
                 vendor: s(pick(&VENDORS, sr(h, 2))),
                 grade: s(grade),
                 received: month_stamp((shelf_total - shelf_days).max(0)),
-                expires: if shelf_days >= 0 {
-                    due(shelf_days)
-                } else {
-                    format!("expired {}", stamp(-shelf_days))
-                },
+                expires: if shelf_days >= 0 { due(shelf_days) } else { format!("expired {}", stamp(-shelf_days)) },
                 shelf_days,
                 shelf_total,
                 qty,
@@ -1849,15 +1326,8 @@ const SENSOR_SPECS: [(SensorKind, &str, f64, f64, f64); 6] = [
     (SensorKind::Ph, "pH", 6.6, 7.4, 7.0),
     (SensorKind::Pressure, "Pa", 5.0, 25.0, 14.0),
 ];
-const ZONES: [&str; 7] = [
-    "Fermentation hall",
-    "Media kitchen",
-    "Cryo room",
-    "Molecular lab",
-    "Prep bay",
-    "Airlock",
-    "Utility loft",
-];
+const ZONES: [&str; 7] =
+    ["Fermentation hall", "Media kitchen", "Cryo room", "Molecular lab", "Prep bay", "Airlock", "Utility loft"];
 
 /// Out of range is an alarm; the outer 12 % of the range on either side warns.
 pub fn sensor_state(value: f64, low: f64, high: f64) -> SensorState {
@@ -1883,12 +1353,7 @@ fn gen_sensors(ns: &str) -> Vec<Sensor> {
             let head: String = word.chars().take(4).collect();
             out.push(Sensor {
                 id: format!("{ns}-sn-{z}-{k}"),
-                code: format!(
-                    "{}-{}-{}",
-                    head.to_uppercase(),
-                    kind.as_str().to_uppercase(),
-                    z + 1
-                ),
+                code: format!("{}-{}-{}", head.to_uppercase(), kind.as_str().to_uppercase(), z + 1),
                 zone: s(zone),
                 kind,
                 value,
@@ -1913,12 +1378,7 @@ const DESTINATIONS: [&str; 9] = [
     "Toronto CRO",
     "Singapore scale-up",
 ];
-const COURIERS: [&str; 4] = [
-    "CryoFreight",
-    "Nordwerk Logistics",
-    "PolarLine",
-    "Meridian Express",
-];
+const COURIERS: [&str; 4] = ["CryoFreight", "Nordwerk Logistics", "PolarLine", "Meridian Express"];
 const STAGES: [ShipmentStage; 5] = [
     ShipmentStage::Packed,
     ShipmentStage::PickedUp,
@@ -1932,28 +1392,18 @@ fn gen_shipments(ns: &str, count: usize, span_days: i64) -> Vec<Shipment> {
         .map(|i| {
             let h = hash_text(&format!("{ns}-ship-{i}"));
             let days_ago = age_curve(i, count, span_days as f64);
-            let stage = if days_ago > 12 {
-                ShipmentStage::Delivered
-            } else {
-                STAGES[(days_ago.div_euclid(3)).min(4) as usize]
-            };
+            let stage =
+                if days_ago > 12 { ShipmentStage::Delivered } else { STAGES[(days_ago.div_euclid(3)).min(4) as usize] };
             let vials = 4 + h % 40;
             Shipment {
                 id: format!("{ns}-shp{}", i + 100),
-                code: format!(
-                    "SHP-{}",
-                    pad_start(&(1800 - i as i64).max(1).to_string(), 4)
-                ),
+                code: format!("SHP-{}", pad_start(&(1800 - i as i64).max(1).to_string(), 4)),
                 destination: s(pick(&DESTINATIONS, h)),
                 courier: s(pick(&COURIERS, sr(h, 3))),
                 vials,
                 dry_ice_kg: (3 + h % 18) as f64,
                 stage,
-                eta_days: if stage == ShipmentStage::Delivered {
-                    -days_ago
-                } else {
-                    1 + h % 5
-                },
+                eta_days: if stage == ShipmentStage::Delivered { -days_ago } else { 1 + h % 5 },
                 eta: if stage == ShipmentStage::Delivered {
                     format!("delivered {}", stamp(days_ago))
                 } else {
@@ -1982,11 +1432,7 @@ fn assign_lineage(ns: &str, strains: &[Strain]) -> Vec<Strain> {
             let parent_index = if snapped > i { snapped } else { reach };
             let orphan = h % 11 == 0 || parent_index >= strains.len() as i64;
             Strain {
-                parent_id: if orphan {
-                    None
-                } else {
-                    Some(strains[parent_index as usize].id.clone())
-                },
+                parent_id: if orphan { None } else { Some(strains[parent_index as usize].id.clone()) },
                 ..strain.clone()
             }
         })
@@ -1996,37 +1442,23 @@ fn assign_lineage(ns: &str, strains: &[Strain]) -> Vec<Strain> {
 /// #88 — the ledger stops being parallel lists and becomes a graph: a run knows
 /// the machine it occupied, and the lots it drew; a
 /// deviation knows what failed. Every drill in the app follows these edges.
-fn link_runs(
-    ns: &str,
-    runs: Vec<Run>,
-    instruments: &[Instrument],
-    lots: &[ReagentLot],
-) -> Vec<Run> {
+fn link_runs(ns: &str, runs: Vec<Run>, instruments: &[Instrument], lots: &[ReagentLot]) -> Vec<Run> {
     let mut by_kind: HashMap<&str, Vec<&Instrument>> = HashMap::new();
     for instrument in instruments {
-        by_kind
-            .entry(instrument.kind.as_str())
-            .or_default()
-            .push(instrument);
+        by_kind.entry(instrument.kind.as_str()).or_default().push(instrument);
     }
     let all: Vec<&Instrument> = instruments.iter().collect();
     runs.into_iter()
         .map(|mut run| {
             let h = hash_text(&format!("{ns}-link-{}", run.id));
             let pool = by_kind.get(run.vessel.as_str()).unwrap_or(&all);
-            let instrument = if !pool.is_empty() {
-                Some(pool[idx(h, pool.len())])
-            } else {
-                None
-            };
+            let instrument = if pool.is_empty() { None } else { Some(pool[idx(h, pool.len())]) };
             // Media, carbon source, an inducer and an antibiotic: the four things
             // every charge draws.
-            let lot_ids = if !lots.is_empty() {
-                (0..3 + h % 2)
-                    .map(|k| lots[idx(h + k * 29, lots.len())].id.clone())
-                    .collect()
-            } else {
+            let lot_ids = if lots.is_empty() {
                 Vec::new()
+            } else {
+                (0..3 + h % 2).map(|k| lots[idx(h + k * 29, lots.len())].id.clone()).collect()
             };
             let charge_l = if run.vessel.starts_with("BR-2K") {
                 1.6 + (h % 5) as f64 / 10.0
@@ -2055,19 +1487,15 @@ fn link_incidents(
         .into_iter()
         .map(|mut incident| {
             let h = hash_text(&format!("{ns}-inclink-{}", incident.id));
-            let machine_area = incident.area == IncidentArea::Bioreactor
-                || incident.area == IncidentArea::Facility;
+            let machine_area = incident.area == IncidentArea::Bioreactor || incident.area == IncidentArea::Facility;
             let lot_area = incident.area == IncidentArea::Media;
             incident.instrument_id = if machine_area && !instruments.is_empty() {
                 Some(instruments[idx(h, instruments.len())].id.clone())
             } else {
                 None
             };
-            incident.lot_id = if lot_area && !lots.is_empty() {
-                Some(lots[idx(h, lots.len())].id.clone())
-            } else {
-                None
-            };
+            incident.lot_id =
+                if lot_area && !lots.is_empty() { Some(lots[idx(h, lots.len())].id.clone()) } else { None };
             incident
         })
         .collect()
@@ -2085,13 +1513,7 @@ pub fn seed() -> FacilityData {
     constructs.extend(gen_constructs(NS, extra(60, constructs.len()), 370, SPAN));
 
     let mut strains = seoul_strains();
-    strains.extend(gen_strains(
-        NS,
-        extra(96, strains.len()),
-        640,
-        SPAN,
-        &constructs,
-    ));
+    strains.extend(gen_strains(NS, extra(96, strains.len()), 640, SPAN, &constructs));
 
     let mut runs = seoul_runs();
     let authored_runs = runs.len();
@@ -2101,13 +1523,7 @@ pub fn seed() -> FacilityData {
     assays.extend(gen_assays(NS, &runs[authored_runs..]));
 
     let mut samples = seoul_samples();
-    samples.extend(gen_samples(
-        NS,
-        extra(1400, samples.len()),
-        9000,
-        SPAN,
-        &strains,
-    ));
+    samples.extend(gen_samples(NS, extra(1400, samples.len()), 9000, SPAN, &strains));
     let racks = gen_racks(NS, 4, 6, &samples);
 
     let strains = assign_lineage(NS, &strains);
@@ -2146,28 +1562,19 @@ pub fn run_log(run: &Run) -> Vec<String> {
     ];
     let od = to_fixed(run.od600, 1);
     let tail: Vec<String> = match run.phase {
-        RunPhase::Lag => vec![
-            s("phase: LAG — adaptation, DO 98 %"),
-            format!("OD600 {od} and holding"),
-        ],
+        RunPhase::Lag => vec![s("phase: LAG — adaptation, DO 98 %"), format!("OD600 {od} and holding")],
         RunPhase::Log => vec![
             s("phase: LOG — µ 0.42 h⁻¹, DO 41 %"),
             s("feed pump 2.1 mL/min"),
             format!("OD600 {od} ↑ · titer {}", run.titer),
         ],
         RunPhase::Stationary => {
-            vec![
-                s("phase: STATIONARY — µ ~0, DO 78 %"),
-                format!("OD600 {od} plateau · titer {}", run.titer),
-            ]
+            vec![s("phase: STATIONARY — µ ~0, DO 78 %"), format!("OD600 {od} plateau · titer {}", run.titer)]
         }
         RunPhase::Harvested => vec![
             s("phase: LOG — peak µ 0.51 h⁻¹"),
             format!("phase: STATIONARY at OD600 {od}"),
-            format!(
-                "harvested after {} · final titer {}",
-                run.duration, run.titer
-            ),
+            format!("harvested after {} · final titer {}", run.duration, run.titer),
             s("CIP cycle complete"),
         ],
         RunPhase::Failed => vec![
@@ -2188,9 +1595,9 @@ pub fn run_log(run: &Run) -> Vec<String> {
 fn hash_text(text: &str) -> i64 {
     let mut h: i32 = 0;
     for unit in text.encode_utf16() {
-        h = h.wrapping_mul(31).wrapping_add(unit as i32);
+        h = h.wrapping_mul(31).wrapping_add(i32::from(unit));
     }
-    (h as i64).abs()
+    i64::from(h).abs()
 }
 
 /// 24-point OD600 curve shaped by the run's phase.
@@ -2201,20 +1608,14 @@ pub fn od_series(run: &Run) -> Vec<f64> {
     let logistic = |t: f64| od / (1.0 + (-9.0 * (t - 0.55)).exp());
     (0..24)
         .map(|i| {
-            let fi = i as f64;
+            let fi = f64::from(i);
             let t = fi / 23.0;
             match run.phase {
                 RunPhase::Lag => f64::max(0.05 + 0.3 * t + wiggle(fi) * 0.3, 0.02),
                 RunPhase::Log => f64::max(logistic(t * 0.7) + wiggle(fi), 0.02),
-                RunPhase::Stationary | RunPhase::Harvested => {
-                    f64::max(logistic(t) + wiggle(fi), 0.02)
-                }
+                RunPhase::Stationary | RunPhase::Harvested => f64::max(logistic(t) + wiggle(fi), 0.02),
                 RunPhase::Failed => f64::max(
-                    if t < 0.5 {
-                        logistic(t)
-                    } else {
-                        logistic(0.5) * (1.0 - (t - 0.5) * 1.4) + wiggle(fi)
-                    },
+                    if t < 0.5 { logistic(t) } else { logistic(0.5) * (1.0 - (t - 0.5) * 1.4) + wiggle(fi) },
                     0.02,
                 ),
             }
@@ -2226,9 +1627,9 @@ pub fn od_series(run: &Run) -> Vec<f64> {
 /* JS semantics helpers                                                      */
 /* ------------------------------------------------------------------------- */
 
-/// JS `h >> n`: ToInt32 then arithmetic shift.
+/// JS `h >> n`: `ToInt32` then arithmetic shift.
 fn sr(h: i64, n: u32) -> i64 {
-    ((h as u32 as i32) >> (n & 31)) as i64
+    i64::from((h as u32 as i32) >> (n & 31))
 }
 
 /// `n % len` as an index. JS would yield `undefined` for a negative `n`, which
@@ -2246,11 +1647,7 @@ fn js_round(x: f64) -> i64 {
 /// `String.prototype.padStart(width, '0')`.
 fn pad_start(v: &str, width: usize) -> String {
     let len = v.encode_utf16().count();
-    if len >= width {
-        v.to_string()
-    } else {
-        format!("{}{}", "0".repeat(width - len), v)
-    }
+    if len >= width { v.to_string() } else { format!("{}{}", "0".repeat(width - len), v) }
 }
 
 /// `Number.prototype.toFixed(digits)`: rounds the *exact* binary value, ties
@@ -2271,10 +1668,7 @@ pub fn to_fixed(x: f64, digits: usize) -> String {
     let exact = (-lsb).max(0) as usize;
     let text = format!("{:.*}", exact.max(digits + 1), a);
     let (int_part, frac_part) = text.split_once('.').unwrap_or((&text, ""));
-    let mut digits_vec: Vec<u8> = int_part
-        .bytes()
-        .chain(frac_part.bytes().take(digits))
-        .collect();
+    let mut digits_vec: Vec<u8> = int_part.bytes().chain(frac_part.bytes().take(digits)).collect();
     let round_up = frac_part.as_bytes().get(digits).is_some_and(|&d| d >= b'5');
     if round_up {
         let mut i = digits_vec.len();
@@ -2336,16 +1730,8 @@ pub fn js_num(x: f64) -> String {
         format!("0.{}{digits}", "0".repeat((-n) as usize))
     } else {
         let e = n - 1;
-        let e_str = if e >= 0 {
-            format!("+{e}")
-        } else {
-            e.to_string()
-        };
-        if k == 1 {
-            format!("{digits}e{e_str}")
-        } else {
-            format!("{}.{}e{e_str}", &digits[..1], &digits[1..])
-        }
+        let e_str = if e >= 0 { format!("+{e}") } else { e.to_string() };
+        if k == 1 { format!("{digits}e{e_str}") } else { format!("{}.{}e{e_str}", &digits[..1], &digits[1..]) }
     };
     format!("{sign}{body}")
 }

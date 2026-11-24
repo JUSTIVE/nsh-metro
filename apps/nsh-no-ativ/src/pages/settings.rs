@@ -43,7 +43,9 @@ pub fn render(app: App) -> PageView {
                 .child(accent_grid(78.))
                 .child(text(TextStyle::Accent, || Theme::get().accent.name())),
         )
-        .child(toggle_switch(|| Theme::get().reduced_motion).header("reduce motion").on_change(Theme::set_reduced_motion))
+        .child(
+            toggle_switch(|| Theme::get().reduced_motion).header("reduce motion").on_change(Theme::set_reduced_motion),
+        )
         .child(
             view()
                 .child(

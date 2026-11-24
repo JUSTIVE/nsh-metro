@@ -67,7 +67,7 @@ pub fn render(app: App) -> PageView {
     let runs = {
         let t = tile("runs", TileSize::Medium).title("runs").icon(Icon::Flask).count(c.live as u32);
         let first = move |f: fn(&crate::data::Run) -> String| {
-            line(move || app.live(|s| s.live_runs().next().map(f).unwrap_or_default()))
+            line(move || app.live(|s| s.live_runs().next().map_or_default(f)))
         };
         if c.live > 0 {
             let head = first(|r| r.code.clone());
@@ -105,7 +105,7 @@ pub fn render(app: App) -> PageView {
         let bg: Rc<dyn Fn() -> Hsla> =
             Rc::new(move || if alarms() > 0 { Accent::Red.color() } else { Accent::Teal.color() });
         let worst = move |f: fn(&crate::data::Sensor) -> String| -> Line {
-            line(move || app.live(|s| s.worst_sensor().map(f).unwrap_or_default()))
+            line(move || app.live(|s| s.worst_sensor().map_or_default(f)))
         };
         let head = worst(|s| format!("{} {}", reading(s), s.unit));
         let lines = vec![worst(|s| s.code.clone()), worst(|s| s.zone.to_lowercase())];

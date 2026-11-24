@@ -8,7 +8,6 @@
 
 use nsh_core::prelude::*;
 
-
 /// Dark or light background, the first of the phone's two theme choices.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 pub enum Mode {
@@ -327,11 +326,11 @@ mod tests {
     #[test]
     fn every_accent_has_a_unique_colour_and_name() {
         let mut hexes: Vec<u32> = Accent::ALL.iter().map(|a| a.hex()).collect();
-        hexes.sort();
+        hexes.sort_unstable();
         hexes.dedup();
         assert_eq!(hexes.len(), 20);
         let mut names: Vec<&str> = Accent::ALL.iter().map(|a| a.name()).collect();
-        names.sort();
+        names.sort_unstable();
         names.dedup();
         assert_eq!(names.len(), 20);
     }

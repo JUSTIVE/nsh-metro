@@ -9,20 +9,42 @@ use crate::data::{IncidentArea, IncidentSeverity};
 #[derive(Clone, Debug, PartialEq)]
 pub enum Page {
     Start,
-    Runs { pivot: usize },
-    Run { id: String },
-    Telemetry { zone: usize },
+    Runs {
+        pivot: usize,
+    },
+    Run {
+        id: String,
+    },
+    Telemetry {
+        zone: usize,
+    },
     Strains,
-    Strain { id: String },
-    Incidents { pivot: usize },
-    Incident { id: String },
+    Strain {
+        id: String,
+    },
+    Incidents {
+        pivot: usize,
+    },
+    Incident {
+        id: String,
+    },
     /// The new-incident form, optionally pre-linked to a run.
-    NewIncident { run: Option<String> },
-    Reagents { pivot: usize },
-    Shipments { pivot: usize },
+    NewIncident {
+        run: Option<String>,
+    },
+    Reagents {
+        pivot: usize,
+    },
+    Shipments {
+        pivot: usize,
+    },
     Freezer,
-    Deck { pivot: usize },
-    People { pivot: usize },
+    Deck {
+        pivot: usize,
+    },
+    People {
+        pivot: usize,
+    },
     Settings,
 }
 

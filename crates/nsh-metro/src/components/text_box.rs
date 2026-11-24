@@ -85,7 +85,9 @@ impl IntoElement for TextBox {
         }
         view()
             .gap(u(4.))
-            .children(self.header.map(|h| label(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
+            .children(self.header.map(|h| {
+                label(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)
+            }))
             .child(
                 view()
                     .flex_row()

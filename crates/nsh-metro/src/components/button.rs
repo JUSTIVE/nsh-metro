@@ -79,23 +79,24 @@ impl IntoElement for Button {
             .border(px(3.))
             .border_color(move || {
                 let p = palette();
-                if accent { p.accent } else if disabled { p.disabled } else { p.foreground }
+                if accent {
+                    p.accent
+                } else if disabled {
+                    p.disabled
+                } else {
+                    p.foreground
+                }
             })
             .bg(move || if accent { palette().accent } else { palette().accent.opacity(0.) })
-            .when(self.full_width, |el| el.w_full())
-            .when(!disabled, |el| el.cursor_pointer());
+            .when(self.full_width, Styled::w_full)
+            .when(!disabled, Styled::cursor_pointer);
         if !disabled {
             el = el.active(|s| s.bg(palette().accent).border_color(palette().accent));
         }
         if let Some(icon) = self.icon {
             el = el.child(icon.render(20., fg));
         }
-        el = el.child(
-            label(self.label)
-                .font_family(FONT_FAMILY)
-                .text_size(u(size::MEDIUM))
-                .text_color(fg),
-        );
+        el = el.child(label(self.label).font_family(FONT_FAMILY).text_size(u(size::MEDIUM)).text_color(fg));
         if let (Some(f), false) = (self.on_click, disabled) {
             el = el.on_press(move || f());
         }
