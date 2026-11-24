@@ -990,6 +990,6 @@ fn build(page: Page) -> Playground {
 }
 
 #[allow(dead_code)]
-fn _font() -> &'static str {
-    FONT_FAMILY
+fn _font() -> SharedString {
+    FONT_FAMILY()
 }

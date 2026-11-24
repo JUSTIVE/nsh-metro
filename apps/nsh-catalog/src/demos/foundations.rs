@@ -90,7 +90,7 @@ const STYLES: [(TextStyle, &str, &str); 11] = [
 pub fn typography() -> AnyElement {
     page(
         "typography",
-        stack().child(caption(format!("set in {FONT_FAMILY}"))).children(STYLES.into_iter().map(|(style, name, sample)| {
+        stack().child(caption(format!("set in {}", FONT_FAMILY()))).children(STYLES.into_iter().map(|(style, name, sample)| {
             view().child(caption(format!("{name} · {} px", style.size()))).child(text(style, sample))
         })),
     )

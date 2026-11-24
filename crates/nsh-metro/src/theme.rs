@@ -239,8 +239,29 @@ pub mod size {
 }
 
 /// Metro is set in Segoe WP; the closest face on macOS that still carries
-/// light weights.
-pub const FONT_FAMILY: &str = "Helvetica Neue";
+/// light weights. An app with a face of its own puts it in its place with
+/// [`set_font_family`]; components read it through this, so call sites keep
+/// `.font_family(FONT_FAMILY)`.
+pub const FONT_FAMILY: fn() -> SharedString = font_family;
+
+/// The default face, before an app sets its own.
+pub const DEFAULT_FONT_FAMILY: &str = "Helvetica Neue";
+
+thread_local! {
+    static FAMILY: std::cell::RefCell<SharedString> = std::cell::RefCell::new(SharedString::from(DEFAULT_FONT_FAMILY));
+}
+
+/// The face every component is set in.
+pub fn font_family() -> SharedString {
+    FAMILY.with(|f| f.borrow().clone())
+}
+
+/// Sets the face every component is set in (registered with the platform
+/// first), as gpui-metro's `Theme::font_family` did. Call it before the
+/// first component is built: a component reads it when it is built.
+pub fn set_font_family(family: impl Into<SharedString>) {
+    FAMILY.with(|f| *f.borrow_mut() = family.into());
+}
 
 /// Weight of the big Metro type (page titles, pivot headers).
 pub const LIGHT: FontWeight = FontWeight::LIGHT;
