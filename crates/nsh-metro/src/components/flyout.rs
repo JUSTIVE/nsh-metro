@@ -29,6 +29,7 @@ pub enum FlyoutWidth {
 }
 
 impl FlyoutWidth {
+    /// The panel's width in px.
     pub fn px(self) -> f32 {
         match self {
             FlyoutWidth::Narrow => 346.,
@@ -54,6 +55,8 @@ pub struct SettingsFlyout {
     on_back: Option<ClickHandler>,
 }
 
+/// A narrow, untitled flyout shown while `open` is true (a value, or a
+/// signal or closure).
 pub fn settings_flyout(open: impl IntoReactive<bool>) -> SettingsFlyout {
     SettingsFlyout {
         open: open.into_reactive(),
@@ -71,6 +74,7 @@ impl SettingsFlyout {
         self.title = title.into();
         self
     }
+    /// Narrow (346 px, the default) or wide (646 px).
     pub fn width(mut self, width: FlyoutWidth) -> Self {
         self.width = width;
         self

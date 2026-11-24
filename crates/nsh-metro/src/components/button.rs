@@ -25,19 +25,23 @@ pub struct Button {
     full_width: bool,
 }
 
+/// A bordered push button with `label` in it.
 pub fn button(label: impl Into<SharedString>) -> Button {
     Button { label: label.into(), icon: None, on_click: None, disabled: false, accent: false, full_width: false }
 }
 
 impl Button {
+    /// Runs `f` on a tap.
     pub fn on_click(mut self, f: impl Fn() + 'static) -> Self {
         self.on_click = Some(Rc::new(f));
         self
     }
+    /// A 20 px glyph before the label.
     pub fn icon(mut self, icon: Icon) -> Self {
         self.icon = Some(icon);
         self
     }
+    /// Greys the button out and ignores taps.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
@@ -47,6 +51,7 @@ impl Button {
         self.accent = true;
         self
     }
+    /// Stretches the button across its container.
     pub fn full_width(mut self) -> Self {
         self.full_width = true;
         self
@@ -113,23 +118,29 @@ pub struct RoundButton {
     filled: bool,
 }
 
+/// A round button showing `icon`, 48 px across.
 pub fn round_button(icon: Icon) -> RoundButton {
     RoundButton { icon, diameter: 48., on_click: None, disabled: false, filled: false }
 }
 
 impl RoundButton {
+    /// Runs `f` on a tap.
     pub fn on_click(mut self, f: impl Fn() + 'static) -> Self {
         self.on_click = Some(Rc::new(f));
         self
     }
+    /// The diameter in px (default 48); the glyph is half of it.
     pub fn diameter(mut self, d: f32) -> Self {
         self.diameter = d;
         self
     }
+    /// Greys the button out and ignores taps (and skips the tilt).
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
+    /// Fills the ring with the foreground and draws the glyph in the
+    /// ground colour: an "on" state, such as a playing media button.
     pub fn filled(mut self, filled: bool) -> Self {
         self.filled = filled;
         self
@@ -168,11 +179,13 @@ pub struct HyperlinkButton {
     on_click: Option<ClickHandler>,
 }
 
+/// An underlined text link reading `label`.
 pub fn hyperlink(label: impl Into<SharedString>) -> HyperlinkButton {
     HyperlinkButton { label: label.into(), on_click: None }
 }
 
 impl HyperlinkButton {
+    /// Runs `f` on a tap.
     pub fn on_click(mut self, f: impl Fn() + 'static) -> Self {
         self.on_click = Some(Rc::new(f));
         self

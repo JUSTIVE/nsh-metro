@@ -16,11 +16,13 @@ pub struct PageHeader {
     title: SharedString,
 }
 
+/// A page header with `title`, set lower-case in [`TextStyle::Title1`].
 pub fn page_header(title: impl Into<SharedString>) -> PageHeader {
     PageHeader { app_title: None, title: title.into() }
 }
 
 impl PageHeader {
+    /// The app's name above the title, in upper-case [`TextStyle::AppTitle`].
     pub fn app_title(mut self, app: impl Into<SharedString>) -> Self {
         self.app_title = Some(app.into());
         self
@@ -46,16 +48,20 @@ pub struct SystemTray {
     transparent: bool,
 }
 
+/// A system tray showing `time` (a value, or a signal or closure for a clock).
+/// Transparent over the page, with the battery at 80%.
 pub fn system_tray(time: impl IntoReactive<SharedString>) -> SystemTray {
     SystemTray { time: time.into_reactive(), battery: 0.8, transparent: true }
 }
 
 impl SystemTray {
+    /// The battery's charge, 0–1 (default 0.8).
     pub fn battery(mut self, level: f32) -> Self {
         self.battery = level.clamp(0., 1.);
         self
     }
 
+    /// Fills the tray with the chrome colour instead of letting the page show through.
     pub fn opaque(mut self) -> Self {
         self.transparent = false;
         self

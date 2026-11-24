@@ -12,11 +12,14 @@ use nsh_core::prelude::*;
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 pub enum Mode {
     #[default]
+    /// Black ground, white type: the phone's default.
     Dark,
+    /// White ground, black type.
     Light,
 }
 
 impl Mode {
+    /// The other mode.
     pub fn toggled(self) -> Self {
         match self {
             Mode::Dark => Mode::Light,
@@ -24,6 +27,7 @@ impl Mode {
         }
     }
 
+    /// The mode's lower-case name, as the phone's settings showed it (`"dark"`, `"light"`).
     pub fn label(self) -> &'static str {
         match self {
             Mode::Dark => "dark",
@@ -35,30 +39,51 @@ impl Mode {
 /// The twenty accent colours of Windows Phone 8.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 pub enum Accent {
+    /// Lime, `#A4C400`.
     Lime,
+    /// Green, `#60A917`.
     Green,
+    /// Emerald, `#008A00`.
     Emerald,
+    /// Teal, `#00ABA9`.
     Teal,
+    /// Cyan, `#1BA1E2`.
     Cyan,
     #[default]
+    /// Cobalt, `#0050EF`: the default.
     Cobalt,
+    /// Indigo, `#6A00FF`.
     Indigo,
+    /// Violet, `#AA00FF`.
     Violet,
+    /// Pink, `#F472D0`.
     Pink,
+    /// Magenta, `#D80073`.
     Magenta,
+    /// Crimson, `#A20025`.
     Crimson,
+    /// Red, `#E51400`.
     Red,
+    /// Orange, `#FA6800`.
     Orange,
+    /// Amber, `#F0A30A`.
     Amber,
+    /// Yellow, `#E3C800`.
     Yellow,
+    /// Brown, `#825A2C`.
     Brown,
+    /// Olive, `#6D8764`.
     Olive,
+    /// Steel, `#647687`.
     Steel,
+    /// Mauve, `#76608A`.
     Mauve,
+    /// Taupe, `#87794E`.
     Taupe,
 }
 
 impl Accent {
+    /// Every accent, in the order of the phone's accent picker.
     pub const ALL: [Accent; 20] = [
         Accent::Lime,
         Accent::Green,
@@ -82,6 +107,7 @@ impl Accent {
         Accent::Taupe,
     ];
 
+    /// The accent as `0xRRGGBB`.
     pub fn hex(self) -> u32 {
         match self {
             Accent::Lime => 0xA4C400,
@@ -107,10 +133,12 @@ impl Accent {
         }
     }
 
+    /// The accent as a colour.
     pub fn color(self) -> Hsla {
         rgb(self.hex()).into()
     }
 
+    /// The accent's lower-case name (`"cobalt"`), as the phone's picker listed it.
     pub fn name(self) -> &'static str {
         match self {
             Accent::Lime => "lime",
@@ -147,7 +175,9 @@ impl Accent {
 /// Windows Phone resource keys (`PhoneForegroundBrush`, `PhoneSubtleBrush`, …).
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Palette {
+    /// The ground: black in dark mode, white in light (`PhoneBackgroundBrush`).
     pub background: Hsla,
+    /// Primary text and glyphs: the opposite of the ground (`PhoneForegroundBrush`).
     pub foreground: Hsla,
     /// Secondary text: dates, captions, inactive pivot headers.
     pub subtle: Hsla,
@@ -165,7 +195,9 @@ pub struct Palette {
     pub input_ink: Hsla,
     /// Dim layer behind a message box.
     pub scrim: Hsla,
+    /// The accent itself (`PhoneAccentBrush`).
     pub accent: Hsla,
+    /// Text and glyphs on a filled accent (always white; see [`Accent::ink`]).
     pub accent_ink: Hsla,
 }
 
@@ -175,6 +207,7 @@ fn alpha(hex: u32, a: f32) -> Hsla {
 }
 
 impl Palette {
+    /// The tokens for `mode` with `accent`.
     pub fn resolve(mode: Mode, accent: Accent) -> Self {
         let (accent, accent_ink) = (accent.color(), accent.ink());
         match mode {
@@ -273,7 +306,9 @@ pub const SEMIBOLD: FontWeight = FontWeight::SEMIBOLD;
 /// [`Theme::set_accent`]; everything bound to [`palette`] follows.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Theme {
+    /// Dark or light ground.
     pub mode: Mode,
+    /// The accent colour.
     pub accent: Accent,
     /// When true, components skip their entrance/transition motion.
     pub reduced_motion: bool,
@@ -291,18 +326,23 @@ impl Theme {
         global::<Theme>().get()
     }
 
+    /// Switches the ground; everything bound to [`palette`] re-skins.
     pub fn set_mode(mode: Mode) {
         global::<Theme>().update(|t| t.mode = mode);
     }
 
+    /// Switches the accent; everything bound to [`palette`] re-skins.
     pub fn set_accent(accent: Accent) {
         global::<Theme>().update(|t| t.accent = accent);
     }
 
+    /// Turns motion down (`true`) or back up. Components read it when they are built,
+    /// so it applies to what is built after the change.
     pub fn set_reduced_motion(reduced: bool) {
         global::<Theme>().update(|t| t.reduced_motion = reduced);
     }
 
+    /// This theme's colour tokens.
     pub fn palette(&self) -> Palette {
         Palette::resolve(self.mode, self.accent)
     }

@@ -20,11 +20,15 @@ use crate::{
     theme::{FONT_FAMILY, LIGHT, palette, reduced_motion, size, u},
 };
 
+/// One section of a [`Panorama`]: a header over its content.
 pub struct PanoramaSection {
     header: SharedString,
     content: PaneBuilder,
 }
 
+/// The panorama (WP7's `Panorama`): a huge title over a strip of
+/// sections, the title drifting at [`PARALLAX`] of the strip's speed.
+/// `panorama("people", move || section.get()).section("recent", || …)`
 pub struct Panorama {
     title: SharedString,
     sections: Vec<PanoramaSection>,
@@ -33,6 +37,9 @@ pub struct Panorama {
     on_select: Option<SelectHandler>,
 }
 
+/// A panorama titled `title` (set lower-case, 112 px light) showing the
+/// section at `selected` (a value, or a signal or closure). Sections are
+/// 420 px wide.
 pub fn panorama(title: impl Into<SharedString>, selected: impl IntoReactive<usize>) -> Panorama {
     Panorama {
         title: title.into(),
@@ -44,6 +51,8 @@ pub fn panorama(title: impl Into<SharedString>, selected: impl IntoReactive<usiz
 }
 
 impl Panorama {
+    /// Adds a section: `header` set lower-case in large light type over
+    /// `content`, which is built once.
     pub fn section<E: IntoElement>(
         mut self,
         header: impl Into<SharedString>,
@@ -53,10 +62,13 @@ impl Panorama {
             .push(PanoramaSection { header: header.into(), content: Rc::new(move || content().into_element()) });
         self
     }
+    /// A section's width in px (default 420).
     pub fn section_width(mut self, w: f32) -> Self {
         self.section_width = w;
         self
     }
+    /// Tapping a section or swiping sideways asks for that section, with its
+    /// index; set `selected` from it. Without it only `selected` moves the strip.
     pub fn on_select(mut self, f: impl Fn(usize) + 'static) -> Self {
         self.on_select = Some(Rc::new(f));
         self

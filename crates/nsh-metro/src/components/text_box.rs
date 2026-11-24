@@ -13,6 +13,7 @@ use crate::components::text::label;
 
 use crate::theme::{FONT_FAMILY, palette, size, u};
 
+/// `text_box(name).header("name").placeholder("your name")`
 pub struct TextBox {
     value: Signal<String>,
     header: Option<SharedString>,
@@ -28,10 +29,12 @@ pub fn text_box(value: Signal<String>) -> TextBox {
 }
 
 impl TextBox {
+    /// The caption above the box, in the subtle colour.
     pub fn header(mut self, h: impl Into<SharedString>) -> Self {
         self.header = Some(h.into());
         self
     }
+    /// Grey text shown while the box is empty.
     pub fn placeholder(mut self, p: impl Into<SharedString>) -> Self {
         self.placeholder = Some(p.into());
         self

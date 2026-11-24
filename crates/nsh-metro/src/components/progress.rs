@@ -15,6 +15,8 @@ pub struct ProgressBar {
     value: Option<Reactive<f32>>,
 }
 
+/// A determinate bar, 4 px high, filled with the accent to `value` over a
+/// faint accent track.
 pub fn progress_bar(value: impl IntoReactive<f32>) -> ProgressBar {
     ProgressBar { value: Some(value.into_reactive()) }
 }
@@ -112,17 +114,20 @@ pub struct ProgressRing {
     diameter: f32,
 }
 
+/// A ring of accent dots, 40 px across.
 pub fn progress_ring() -> ProgressRing {
     ProgressRing { diameter: 40. }
 }
 
 impl ProgressRing {
+    /// The ring's diameter in px (default 40); the dots scale with it.
     pub fn diameter(mut self, d: f32) -> Self {
         self.diameter = d;
         self
     }
 }
 
+/// How many dots chase round the ring.
 pub const RING_DOTS: usize = 5;
 const RING_CYCLE: f32 = 5.5;
 const RING_STAGGER: f32 = 0.24;

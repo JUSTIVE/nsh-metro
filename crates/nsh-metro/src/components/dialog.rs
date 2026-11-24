@@ -24,19 +24,24 @@ pub struct MessageBox {
     on_dismiss: Option<ClickHandler>,
 }
 
+/// A message box with `title` in large semibold type.
 pub fn message_box(title: impl Into<SharedString>) -> MessageBox {
     MessageBox { title: title.into(), message: None, content: None, buttons: Vec::new(), on_dismiss: None }
 }
 
 impl MessageBox {
+    /// The body text under the title.
     pub fn message(mut self, m: impl Into<SharedString>) -> Self {
         self.message = Some(m.into());
         self
     }
+    /// Custom content under the message, above the buttons.
     pub fn child(mut self, e: impl IntoElement) -> Self {
         self.content = Some(e.into_element());
         self
     }
+    /// Adds a button to the bottom row; the buttons share the row equally.
+    /// A tap runs `f` (close the box from it).
     pub fn button(mut self, label: impl Into<SharedString>, f: impl Fn() + 'static) -> Self {
         self.buttons.push((label.into(), Rc::new(f)));
         self
@@ -90,19 +95,23 @@ pub struct Toast {
     on_click: Option<ClickHandler>,
 }
 
+/// A toast with `title` in semibold, on the accent.
 pub fn toast(title: impl Into<SharedString>) -> Toast {
     Toast { title: title.into(), message: None, icon: None, on_click: None }
 }
 
 impl Toast {
+    /// Text after the title, on the same line, cut off with an ellipsis.
     pub fn message(mut self, m: impl Into<SharedString>) -> Self {
         self.message = Some(m.into());
         self
     }
+    /// A 22 px glyph before the title.
     pub fn icon(mut self, i: Icon) -> Self {
         self.icon = Some(i);
         self
     }
+    /// Runs `f` on a tap on the band.
     pub fn on_click(mut self, f: impl Fn() + 'static) -> Self {
         self.on_click = Some(Rc::new(f));
         self

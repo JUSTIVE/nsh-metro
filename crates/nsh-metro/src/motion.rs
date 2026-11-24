@@ -98,9 +98,13 @@ pub enum Direction {
 }
 
 impl Direction {
+    /// The angle (degrees) a turnstile entrance starts from: [`FORWARD_IN_DEG`]
+    /// or [`BACKWARD_IN_DEG`].
     pub fn enter_from(self) -> f32 {
         if self == Direction::Forward { FORWARD_IN_DEG } else { BACKWARD_IN_DEG }
     }
+    /// The angle (degrees) a turnstile exit swings to: [`FORWARD_OUT_DEG`] or
+    /// [`BACKWARD_OUT_DEG`].
     pub fn exit_to(self) -> f32 {
         if self == Direction::Forward { FORWARD_OUT_DEG } else { BACKWARD_OUT_DEG }
     }
@@ -194,11 +198,14 @@ pub const PANE_OUT: f32 = 130.;
 /// bind their own offsets to it, so one animation moves them all.
 #[derive(Clone, Copy)]
 pub struct PaneSlide {
+    /// 1 while the pane is out at its start, 0 once it has arrived.
     pub progress: AnimatedValue,
+    /// +1 when the pane comes from the right, −1 from the left.
     pub sign: AnimatedValue,
 }
 
 impl PaneSlide {
+    /// A slide at rest: arrived, from the right.
     pub fn new() -> Self {
         Self { progress: animated_value(0.), sign: animated_value(1.) }
     }

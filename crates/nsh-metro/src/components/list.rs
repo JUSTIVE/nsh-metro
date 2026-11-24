@@ -19,8 +19,11 @@ use crate::{
 /// the item; the element variant's size doesn't matter.)
 #[allow(clippy::large_enum_variant)]
 pub enum Leading {
+    /// A glyph from the set, 32 px.
     Icon(Icon),
+    /// A short text, such as an initial, in large type.
     Glyph(SharedString),
+    /// Any element.
     Element(AnyElement),
 }
 
@@ -37,6 +40,7 @@ pub struct ListItem {
     on_click: Option<ClickHandler>,
 }
 
+/// A list item with `title` in large semilight type, and nothing else.
 pub fn list_item(title: impl Into<SharedString>) -> ListItem {
     ListItem {
         title: title.into(),
@@ -51,33 +55,42 @@ pub fn list_item(title: impl Into<SharedString>) -> ListItem {
 }
 
 impl ListItem {
+    /// The second line, in the accent (or subtle, with [`ListItem::subtle_subtitle`]).
     pub fn subtitle(mut self, s: impl Into<SharedString>) -> Self {
         self.subtitle = Some(s.into());
         self
     }
+    /// The third line, in the subtle colour.
     pub fn detail(mut self, s: impl Into<SharedString>) -> Self {
         self.detail = Some(s.into());
         self
     }
+    /// Sets the subtitle in the subtle colour instead of the accent.
     pub fn subtle_subtitle(mut self) -> Self {
         self.subtitle_accent = false;
         self
     }
+    /// A 62 px square before the text, filled with the accent (or
+    /// [`ListItem::leading_color`]).
     pub fn leading(mut self, leading: Leading) -> Self {
         self.leading = Some(leading);
         self
     }
+    /// Shorthand for a [`Leading::Icon`].
     pub fn leading_icon(self, icon: Icon) -> Self {
         self.leading(Leading::Icon(icon))
     }
+    /// The leading square's fill, instead of the accent.
     pub fn leading_color(mut self, c: Hsla) -> Self {
         self.leading_color = Some(c);
         self
     }
+    /// An element at the end of the row, such as a count or a chevron.
     pub fn trailing(mut self, e: impl IntoElement) -> Self {
         self.trailing = Some(e.into_element());
         self
     }
+    /// Runs `f` on a tap; the row dims while pressed.
     pub fn on_click(mut self, f: impl Fn() + 'static) -> Self {
         self.on_click = Some(Rc::new(f));
         self
@@ -140,11 +153,14 @@ impl IntoElement for ListItem {
 
 /// A run of items under one key (a letter).
 pub struct ListGroup {
+    /// The key shown on the group's header square and in the jump grid.
     pub key: SharedString,
+    /// The group's rows.
     pub items: Vec<AnyElement>,
 }
 
 impl ListGroup {
+    /// A group of `items` under `key`.
     pub fn new(key: impl Into<SharedString>, items: impl IntoIterator<Item = AnyElement>) -> Self {
         Self { key: key.into(), items: items.into_iter().collect() }
     }
@@ -163,19 +179,24 @@ pub struct JumpList {
     keys: Option<Vec<SharedString>>,
 }
 
+/// An empty jump list.
 pub fn jump_list() -> JumpList {
     JumpList { groups: Vec::new(), keys: None }
 }
 
 impl JumpList {
+    /// Adds a group, after those already there.
     pub fn group(mut self, group: ListGroup) -> Self {
         self.groups.push(group);
         self
     }
+    /// Adds several groups, in order.
     pub fn groups(mut self, groups: impl IntoIterator<Item = ListGroup>) -> Self {
         self.groups.extend(groups);
         self
     }
+    /// The keys the jump grid shows, in order (such as [`ALPHABET`]); a key
+    /// with no group is greyed out. Defaults to the groups' own keys.
     pub fn keys<S: Into<SharedString>>(mut self, keys: impl IntoIterator<Item = S>) -> Self {
         self.keys = Some(keys.into_iter().map(Into::into).collect());
         self
@@ -271,6 +292,8 @@ pub struct ListPicker {
     on_select: Option<Rc<dyn Fn(usize)>>,
 }
 
+/// A list picker of `items` showing the one at `selected` (a value, or a
+/// signal or closure).
 pub fn list_picker<S: Into<SharedString>>(
     items: impl IntoIterator<Item = S>,
     selected: impl IntoReactive<usize>,
@@ -284,10 +307,12 @@ pub fn list_picker<S: Into<SharedString>>(
 }
 
 impl ListPicker {
+    /// The caption above the field, in the subtle colour.
     pub fn header(mut self, h: impl Into<SharedString>) -> Self {
         self.header = Some(h.into());
         self
     }
+    /// Runs `f` with the index chosen; the picker closes. Set `selected` from it.
     pub fn on_select(mut self, f: impl Fn(usize) + 'static) -> Self {
         self.on_select = Some(Rc::new(f));
         self

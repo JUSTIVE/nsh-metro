@@ -8,11 +8,13 @@ macro_rules! icons {
     ($($variant:ident => $file:literal),+ $(,)?) => {
         /// Every glyph shipped with nsh-metro.
         #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
-        pub enum Icon { $($variant),+ }
+        pub enum Icon { $(#[doc = concat!("The `", $file, "` glyph.")] $variant),+ }
 
         impl Icon {
+            /// Every glyph, in declaration order.
             pub const ALL: &'static [Icon] = &[$(Icon::$variant),+];
 
+            /// The glyph's file name, without `.svg` (`"chevron_down"`).
             pub fn name(self) -> &'static str {
                 match self { $(Icon::$variant => $file),+ }
             }

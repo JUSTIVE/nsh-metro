@@ -32,6 +32,7 @@ pub enum TextStyle {
 }
 
 impl TextStyle {
+    /// The style's font size in px.
     pub fn size(self) -> f32 {
         match self {
             TextStyle::Title1 => size::HUGE,
@@ -43,6 +44,7 @@ impl TextStyle {
         }
     }
 
+    /// The style's font weight.
     pub fn weight(self) -> FontWeight {
         match self {
             TextStyle::Title1 | TextStyle::Title2 => LIGHT,
@@ -62,6 +64,8 @@ impl TextStyle {
         }
     }
 
+    /// The style's line height in px: 1.1 × the size for large type (over 30
+    /// px), 1.3 × otherwise.
     pub fn line_height(self) -> f32 {
         (self.size() * if self.size() > 30. { 1.1 } else { 1.3 }).round()
     }
@@ -88,11 +92,13 @@ pub struct Text {
     nowrap: bool,
 }
 
+/// `content` set in `style`.
 pub fn text(style: TextStyle, content: impl IntoReactive<SharedString>) -> Text {
     Text { style, content: content.into_reactive(), color: None, lowercase: false, nowrap: false }
 }
 
 impl Text {
+    /// Overrides the style's colour (a value or a closure).
     pub fn color(mut self, color: impl IntoReactive<AdaptiveColor>) -> Self {
         self.color = Some(color.into_reactive());
         self

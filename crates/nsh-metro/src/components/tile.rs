@@ -41,6 +41,7 @@ pub enum TileSize {
 }
 
 impl TileSize {
+    /// The footprint as `(columns, rows)` of grid units.
     pub fn span(self) -> (usize, usize) {
         match self {
             TileSize::Small => (1, 1),
@@ -56,6 +57,7 @@ impl TileSize {
         (c as f32 * unit + (c - 1) as f32 * gap, r as f32 * unit + (r - 1) as f32 * gap)
     }
 
+    /// The size's lower-case name (`"wide"`).
     pub fn name(self) -> &'static str {
         match self {
             TileSize::Small => "small",
@@ -66,8 +68,10 @@ impl TileSize {
     }
 }
 
-/// Default WP8 metrics (scaled for a 480-wide page).
+/// The side of a small tile, in px: the WP8 metric, scaled for a 480-wide
+/// page.
 pub const TILE_UNIT: f32 = 99.;
+/// The gutter between tiles, in px.
 pub const TILE_GAP: f32 = 12.;
 
 /// Packs tiles the way the Windows Phone start screen does: the grid is made
@@ -243,6 +247,9 @@ pub struct Tile {
     pub(crate) on_click: Option<ClickHandler>,
 }
 
+/// A tile of `size`, known by `key` (unique within its grid: a
+/// [`TileGrid::source`] grid follows tiles by it). The accent fill with no
+/// title, glyph or back face; live tiles cycle every 12 s.
 pub fn tile(key: impl Into<SharedString>, size: TileSize) -> Tile {
     Tile {
         key: key.into(),
@@ -263,10 +270,12 @@ pub fn tile(key: impl Into<SharedString>, size: TileSize) -> Tile {
 }
 
 impl Tile {
+    /// The name in the bottom-left corner.
     pub fn title(mut self, title: impl Into<SharedString>) -> Self {
         self.title = Some(title.into());
         self
     }
+    /// The glyph on the default front face.
     pub fn icon(mut self, icon: Icon) -> Self {
         self.icon = Some(icon);
         self
@@ -302,19 +311,26 @@ impl Tile {
         self.back_text = Some((headline.into(), lines.into_iter().map(Into::into).collect()));
         self
     }
+    /// Seconds for a full front → back → front cycle of a live tile (default
+    /// 12, at least 6).
     pub fn period(mut self, seconds: f32) -> Self {
         self.period = seconds.max(6.);
         self
     }
+    /// Where in its cycle the tile starts, 0–1 (default 0), so a screen of live
+    /// tiles doesn't slide in unison.
     pub fn phase(mut self, phase: f32) -> Self {
         self.phase = phase.rem_euclid(1.);
         self
     }
+    /// The small-tile side and the gutter, in px (default [`TILE_UNIT`] and
+    /// [`TILE_GAP`]).
     pub fn metrics(mut self, unit: f32, gap: f32) -> Self {
         self.unit = unit;
         self.gap = gap;
         self
     }
+    /// Runs `f` on a tap; the tile tilts under the pointer.
     pub fn on_click(mut self, f: impl Fn() + 'static) -> Self {
         self.on_click = Some(Rc::new(f));
         self
@@ -579,8 +595,9 @@ pub fn enter_schedule(positions: &[(usize, usize)]) -> Vec<f32> {
     ranks.iter().map(|&r| step * r as f32).collect()
 }
 
-/// Space between groups, and the height of the group title row.
+/// Space between groups, in px.
 pub const GROUP_GAP: f32 = 56.;
+/// Height of a group's title row, in px.
 pub const GROUP_HEADER: f32 = 44.;
 
 /// The start screen: tiles packed by [`pack`] and positioned absolutely, in
@@ -604,6 +621,7 @@ pub struct TileGrid {
     on_tap: Option<Rc<dyn Fn()>>,
 }
 
+/// An empty grid, four small tiles wide, in one untitled group.
 pub fn tile_grid() -> TileGrid {
     TileGrid {
         tiles: Vec::new(),
@@ -629,6 +647,7 @@ impl TileGrid {
         self.tiles.push(tile);
         self
     }
+    /// Adds tiles to the current (last) group, in order.
     pub fn tiles(self, tiles: impl IntoIterator<Item = Tile>) -> Self {
         tiles.into_iter().fold(self, TileGrid::tile)
     }
@@ -664,6 +683,8 @@ impl TileGrid {
         self.live_columns = Some(columns);
         self
     }
+    /// The small-tile side and the gutter, in px (default [`TILE_UNIT`] and
+    /// [`TILE_GAP`]).
     pub fn metrics(mut self, unit: f32, gap: f32) -> Self {
         self.unit = unit;
         self.gap = gap;

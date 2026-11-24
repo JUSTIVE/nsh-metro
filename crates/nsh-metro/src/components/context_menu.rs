@@ -25,11 +25,13 @@ pub struct ContextMenu {
     on_open: Option<Rc<dyn Fn(bool)>>,
 }
 
+/// An empty context menu; add commands with [`ContextMenu::item`].
 pub fn context_menu() -> ContextMenu {
     ContextMenu { entries: Vec::new(), on_open: None }
 }
 
 impl ContextMenu {
+    /// Adds a command, shown lower-case; a tap closes the menu and runs `f`.
     pub fn item(mut self, label: impl Into<SharedString>, f: impl Fn() + 'static) -> Self {
         self.entries.push(Entry { label: label.into(), on_click: Some(Rc::new(f)) });
         self

@@ -12,6 +12,7 @@ use crate::theme::{FONT_FAMILY, palette, size, u};
 /// What a slider runs, with the new value (0–1).
 pub type ValueHandler = Rc<dyn Fn(f32)>;
 
+/// `slider(move || volume.get()).on_change(move |v| volume.set(v))`
 pub struct Slider {
     value: Reactive<f32>,
     header: Option<Reactive<SharedString>>,
@@ -20,6 +21,7 @@ pub struct Slider {
     on_change: Option<ValueHandler>,
 }
 
+/// A slider at `value` (0–1; a value, or a signal or closure).
 pub fn slider(value: impl IntoReactive<f32>) -> Slider {
     Slider { value: value.into_reactive(), header: None, step: None, disabled: false, on_change: None }
 }
@@ -30,14 +32,19 @@ impl Slider {
         self.header = Some(header.into_reactive());
         self
     }
+    /// Snaps the value to multiples of `step` (a fraction of the track, such
+    /// as 0.25). Default: no snapping.
     pub fn step(mut self, step: f32) -> Self {
         self.step = Some(step);
         self
     }
+    /// Greys the slider out and ignores presses.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
+    /// Runs `f` with the value under the pointer as it is pressed and dragged.
+    /// Set `value` from it.
     pub fn on_change(mut self, f: impl Fn(f32) + 'static) -> Self {
         self.on_change = Some(Rc::new(f));
         self

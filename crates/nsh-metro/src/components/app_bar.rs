@@ -27,11 +27,16 @@ struct MenuItem {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+/// How much of the bar shows when it is closed.
 pub enum AppBarMode {
+    /// The full bar: its round buttons and the "…".
     Default,
+    /// A thin 30 px strip with only the "…"; it opens to the full bar.
     Minimized,
 }
 
+/// The application bar (WP8's `ApplicationBar`), docked at the bottom of a page.
+/// `app_bar().button(Icon::Add, "new", || …).menu_item("settings", || …)`
 pub struct AppBar {
     buttons: Vec<BarButton>,
     items: Vec<MenuItem>,
@@ -39,27 +44,37 @@ pub struct AppBar {
     opacity: f32,
 }
 
+/// An empty, opaque app bar in [`AppBarMode::Default`].
 pub fn app_bar() -> AppBar {
     AppBar { buttons: Vec::new(), items: Vec::new(), mode: AppBarMode::Default, opacity: 1. }
 }
 
 impl AppBar {
+    /// Adds a round icon button; `label` shows under it, lower-case, while the
+    /// bar is open. A tap closes the bar and runs `f`. Past [`MAX_BUTTONS`]
+    /// buttons are left out.
     pub fn button(mut self, icon: Icon, label: impl Into<SharedString>, f: impl Fn() + 'static) -> Self {
         self.buttons.push(BarButton { icon, label: label.into(), disabled: false, on_click: Some(Rc::new(f)) });
         self
     }
+    /// Adds a greyed-out icon button that does nothing.
     pub fn disabled_button(mut self, icon: Icon, label: impl Into<SharedString>) -> Self {
         self.buttons.push(BarButton { icon, label: label.into(), disabled: true, on_click: None });
         self
     }
+    /// Adds a lower-case menu command, listed under the buttons while the bar
+    /// is open. A tap closes the bar and runs `f`.
     pub fn menu_item(mut self, label: impl Into<SharedString>, f: impl Fn() + 'static) -> Self {
         self.items.push(MenuItem { label: label.into(), on_click: Some(Rc::new(f)) });
         self
     }
+    /// Full or minimized (default [`AppBarMode::Default`]).
     pub fn mode(mut self, mode: AppBarMode) -> Self {
         self.mode = mode;
         self
     }
+    /// Opacity of the bar's chrome fill, 0–1 (default 1). The buttons stay
+    /// opaque, as with the phone's `ApplicationBar.Opacity`.
     pub fn opacity(mut self, opacity: f32) -> Self {
         self.opacity = opacity.clamp(0., 1.);
         self

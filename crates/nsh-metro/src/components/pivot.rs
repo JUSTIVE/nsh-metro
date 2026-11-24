@@ -27,6 +27,7 @@ pub type SelectHandler = Rc<dyn Fn(usize)>;
 /// Builds a pane's content.
 pub type PaneBuilder = Rc<dyn Fn() -> AnyElement>;
 
+/// The pivot (WP7's `Pivot`): lower-case headers over one pane at a time.
 pub struct Pivot {
     title: Option<SharedString>,
     headers: Vec<SharedString>,
@@ -49,6 +50,7 @@ pub fn pivot<S: Into<SharedString>>(headers: impl IntoIterator<Item = S>, select
 }
 
 impl Pivot {
+    /// The app's name above the headers, in upper-case [`TextStyle::AppTitle`].
     pub fn title(mut self, title: impl Into<SharedString>) -> Self {
         self.title = Some(title.into());
         self
@@ -78,11 +80,18 @@ const GLIDE: f32 = 500.;
 /// out in order, and the row's offset at the start and end of the glide.
 #[derive(Clone, Debug, PartialEq)]
 pub struct HeaderGlide {
+    /// The headers to lay out, as indices, in order from the left.
     pub order: Vec<usize>,
+    /// The row's offset at the start of the glide, in px.
     pub from: f32,
+    /// The row's offset at the end of the glide, in px.
     pub to: f32,
 }
 
+/// Plans the header glide from `prev` to `selected` for headers `widths`
+/// px wide: forward, the old header leads and the row slides left until the
+/// new one does; back, the row starts with the new one off to the left and
+/// slides right.
 pub fn header_glide(widths: &[f32], prev: usize, selected: usize, direction: Direction) -> HeaderGlide {
     let len = widths.len();
     let span = |start: usize, count: usize| -> f32 { (0..count).map(|i| widths[(start + i) % len] + HEADER_GAP).sum() };

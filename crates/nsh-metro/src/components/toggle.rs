@@ -26,6 +26,8 @@ pub struct ToggleSwitch {
     on_change: Option<ToggleHandler>,
 }
 
+/// A toggle switch showing `on` (a value, or a signal or closure), labelled
+/// "On" / "Off".
 pub fn toggle_switch(on: impl IntoReactive<bool>) -> ToggleSwitch {
     ToggleSwitch {
         on: on.into_reactive(),
@@ -37,18 +39,23 @@ pub fn toggle_switch(on: impl IntoReactive<bool>) -> ToggleSwitch {
 }
 
 impl ToggleSwitch {
+    /// The caption above, in the subtle colour.
     pub fn header(mut self, header: impl Into<SharedString>) -> Self {
         self.header = Some(header.into());
         self
     }
+    /// The labels shown beside the track when on and when off.
     pub fn labels(mut self, on: impl Into<SharedString>, off: impl Into<SharedString>) -> Self {
         self.labels = (on.into(), off.into());
         self
     }
+    /// Greys the switch out and ignores taps.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
+    /// Runs `f` with the state a tap asks for; the thumb slides when `on`
+    /// changes. Set `on` from it.
     pub fn on_change(mut self, f: impl Fn(bool) + 'static) -> Self {
         self.on_change = Some(Rc::new(f));
         self
@@ -132,19 +139,23 @@ pub struct CheckBox {
     on_change: Option<ToggleHandler>,
 }
 
+/// A check box showing `checked` (a value, or a signal or closure).
 pub fn check_box(checked: impl IntoReactive<bool>) -> CheckBox {
     CheckBox { checked: checked.into_reactive(), label: None, disabled: false, on_change: None }
 }
 
 impl CheckBox {
+    /// The text beside the box.
     pub fn label(mut self, label: impl Into<SharedString>) -> Self {
         self.label = Some(label.into());
         self
     }
+    /// Greys the box out and ignores taps.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
+    /// Runs `f` with the state a tap asks for. Set `checked` from it.
     pub fn on_change(mut self, f: impl Fn(bool) + 'static) -> Self {
         self.on_change = Some(Rc::new(f));
         self
@@ -195,19 +206,23 @@ pub struct RadioButton {
     on_select: Option<Rc<dyn Fn()>>,
 }
 
+/// A radio button showing `selected` (a value, or a signal or closure).
 pub fn radio_button(selected: impl IntoReactive<bool>) -> RadioButton {
     RadioButton { selected: selected.into_reactive(), label: None, disabled: false, on_select: None }
 }
 
 impl RadioButton {
+    /// The text beside the button.
     pub fn label(mut self, label: impl Into<SharedString>) -> Self {
         self.label = Some(label.into());
         self
     }
+    /// Greys the button out and ignores taps.
     pub fn disabled(mut self, disabled: bool) -> Self {
         self.disabled = disabled;
         self
     }
+    /// Runs `f` on a tap. Select this button (and clear the others) from it.
     pub fn on_select(mut self, f: impl Fn() + 'static) -> Self {
         self.on_select = Some(Rc::new(f));
         self
