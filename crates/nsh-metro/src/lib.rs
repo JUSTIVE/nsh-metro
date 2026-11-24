@@ -25,9 +25,13 @@ pub use theme::{Accent, Mode, Palette, Theme, palette, u};
 /// Everything an app usually needs in scope.
 pub mod prelude {
     pub use crate::{
-        Accent, Icon, Mode, Palette, TextStyle, Theme, TileSize, app_bar, button, check_box, hyperlink, jump_list,
-        list_item, list_picker, message_box, motion::Direction, page_header, page_host, palette, panorama, pivot,
-        progress_bar, progress_dots, progress_ring, radio_button, round_button, settings_flyout, slider, system_tray,
-        text, text_box, tile, tile_grid, toast, toggle_switch, u,
+        Accent, AppBarMode, FlyoutWidth, Icon, Leading, ListGroup, Mode, PAGE_MARGIN, Palette, TextStyle, Theme,
+        TileSize, app_bar, button, check_box, context_menu, hyperlink, jump_list, label, list_item, list_picker,
+        message_box,
+        motion::Direction,
+        page_header, page_host, palette, panorama, pivot, progress_bar, progress_dots, progress_ring, radio_button,
+        round_button, settings_flyout, slider, system_tray, text, text_box,
+        theme::{FONT_FAMILY, LIGHT, SEMIBOLD, SEMILIGHT, size},
+        tile, tile_grid, toast, toggle_switch, u, with_context_menu,
     };
 }

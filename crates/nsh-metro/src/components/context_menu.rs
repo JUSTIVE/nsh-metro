@@ -20,6 +20,7 @@ struct Entry {
 }
 
 /// `context_menu().item("pin to start", || ..).item("delete", || ..)`
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct ContextMenu {
     entries: Vec<Entry>,
     on_open: Option<Rc<dyn Fn(bool)>>,

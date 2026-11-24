@@ -148,18 +148,15 @@ pub fn panorama_page(s: DemoState) -> AnyElement {
 }
 
 pub fn app_bar_page(s: DemoState) -> AnyElement {
-    let bar = move || {
-        let mode = if s.app_bar_minimized.get() { AppBarMode::Minimized } else { AppBarMode::Default };
-        let log = move |label: &'static str| move || s.app_bar_log.set(label);
-        app_bar()
-            .mode(mode)
-            .button(Icon::Add, "new", log("new"))
-            .button(Icon::Sync, "sync", log("sync"))
-            .button(Icon::Search, "search", log("search"))
-            .disabled_button(Icon::Delete, "delete")
-            .menu_item("settings", log("settings"))
-            .menu_item("about", log("about"))
-    };
+    let log = move |label: &'static str| move || s.app_bar_log.set(label);
+    let bar = app_bar()
+        .mode(move || if s.app_bar_minimized.get() { AppBarMode::Minimized } else { AppBarMode::Default })
+        .button(Icon::Add, "new", log("new"))
+        .button(Icon::Sync, "sync", log("sync"))
+        .button(Icon::Search, "search", log("search"))
+        .disabled_button(Icon::Delete, "delete")
+        .menu_item("settings", log("settings"))
+        .menu_item("about", log("about"));
 
     view()
         .relative()
@@ -177,6 +174,6 @@ pub fn app_bar_page(s: DemoState) -> AnyElement {
                 .child(text(TextStyle::Large, move || format!("last action: {}", s.app_bar_log.get()))),
         )
         // The bar overlays the page bottom so expanding never reflows it.
-        .child(view().absolute().left_0().right_0().bottom_0().child(dynamic(bar)))
+        .child(view().absolute().left_0().right_0().bottom_0().child(bar))
         .into_element()
 }

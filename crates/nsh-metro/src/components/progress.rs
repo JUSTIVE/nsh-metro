@@ -11,6 +11,7 @@ use nsh_core::prelude::*;
 use crate::theme::{palette, u};
 
 /// A bar filled to `value` (0–1; a value or a closure), or the racing dots.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct ProgressBar {
     value: Option<Reactive<f32>>,
 }
@@ -110,6 +111,7 @@ impl IntoElement for ProgressBar {
 }
 
 /// The ring of dots that chase each other round.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct ProgressRing {
     diameter: f32,
 }

@@ -18,11 +18,13 @@ pub type ToggleHandler = Rc<dyn Fn(bool)>;
 
 /// The WP8 toggle: a label (On/Off) and a square track whose thumb slides
 /// across, the accent filling in behind it.
+#[must_use = "a builder does nothing until it is placed in the tree"]
+#[derive(Clone)]
 pub struct ToggleSwitch {
     on: Reactive<bool>,
     header: Option<SharedString>,
     labels: (SharedString, SharedString),
-    disabled: bool,
+    disabled: Reactive<bool>,
     on_change: Option<ToggleHandler>,
 }
 
@@ -33,7 +35,7 @@ pub fn toggle_switch(on: impl IntoReactive<bool>) -> ToggleSwitch {
         on: on.into_reactive(),
         header: None,
         labels: ("On".into(), "Off".into()),
-        disabled: false,
+        disabled: Reactive::Static(false),
         on_change: None,
     }
 }
@@ -50,8 +52,8 @@ impl ToggleSwitch {
         self
     }
     /// Greys the switch out and ignores taps.
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
+    pub fn disabled(mut self, disabled: impl IntoReactive<bool>) -> Self {
+        self.disabled = disabled.into_reactive();
         self
     }
     /// Runs `f` with the state a tap asks for; the thumb slides when `on`
@@ -69,7 +71,13 @@ const TRAVEL: f32 = TRACK_W - THUMB_W;
 
 impl IntoElement for ToggleSwitch {
     fn into_element(self) -> AnyElement {
-        let disabled = self.disabled;
+        let disabled = self.disabled.clone();
+        super::rebuilt_on(disabled, move |d| self.clone().build(d))
+    }
+}
+
+impl ToggleSwitch {
+    fn build(self, disabled: bool) -> AnyElement {
         let fg = move || if disabled { palette().disabled } else { palette().foreground };
         let fill = move || if disabled { palette().disabled } else { palette().accent };
         let on = self.on;
@@ -132,16 +140,18 @@ impl IntoElement for ToggleSwitch {
 }
 
 /// A square box with a check mark.
+#[must_use = "a builder does nothing until it is placed in the tree"]
+#[derive(Clone)]
 pub struct CheckBox {
     checked: Reactive<bool>,
     label: Option<SharedString>,
-    disabled: bool,
+    disabled: Reactive<bool>,
     on_change: Option<ToggleHandler>,
 }
 
 /// A check box showing `checked` (a value, or a signal or closure).
 pub fn check_box(checked: impl IntoReactive<bool>) -> CheckBox {
-    CheckBox { checked: checked.into_reactive(), label: None, disabled: false, on_change: None }
+    CheckBox { checked: checked.into_reactive(), label: None, disabled: Reactive::Static(false), on_change: None }
 }
 
 impl CheckBox {
@@ -151,8 +161,8 @@ impl CheckBox {
         self
     }
     /// Greys the box out and ignores taps.
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
+    pub fn disabled(mut self, disabled: impl IntoReactive<bool>) -> Self {
+        self.disabled = disabled.into_reactive();
         self
     }
     /// Runs `f` with the state a tap asks for. Set `checked` from it.
@@ -164,7 +174,13 @@ impl CheckBox {
 
 impl IntoElement for CheckBox {
     fn into_element(self) -> AnyElement {
-        let disabled = self.disabled;
+        let disabled = self.disabled.clone();
+        super::rebuilt_on(disabled, move |d| self.clone().build(d))
+    }
+}
+
+impl CheckBox {
+    fn build(self, disabled: bool) -> AnyElement {
         let fg = move || if disabled { palette().disabled } else { palette().foreground };
         let checked = self.checked;
         let mark = {
@@ -199,16 +215,18 @@ impl IntoElement for CheckBox {
 }
 
 /// A round box with a dot.
+#[must_use = "a builder does nothing until it is placed in the tree"]
+#[derive(Clone)]
 pub struct RadioButton {
     selected: Reactive<bool>,
     label: Option<SharedString>,
-    disabled: bool,
+    disabled: Reactive<bool>,
     on_select: Option<Rc<dyn Fn()>>,
 }
 
 /// A radio button showing `selected` (a value, or a signal or closure).
 pub fn radio_button(selected: impl IntoReactive<bool>) -> RadioButton {
-    RadioButton { selected: selected.into_reactive(), label: None, disabled: false, on_select: None }
+    RadioButton { selected: selected.into_reactive(), label: None, disabled: Reactive::Static(false), on_select: None }
 }
 
 impl RadioButton {
@@ -218,11 +236,13 @@ impl RadioButton {
         self
     }
     /// Greys the button out and ignores taps.
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
+    pub fn disabled(mut self, disabled: impl IntoReactive<bool>) -> Self {
+        self.disabled = disabled.into_reactive();
         self
     }
-    /// Runs `f` on a tap. Select this button (and clear the others) from it.
+    /// Runs `f` when the button is chosen. Named as the pivot's and the
+    /// list picker's are: `on_select` is one of many chosen, `on_change` a
+    /// state toggled (a check box, a switch).
     pub fn on_select(mut self, f: impl Fn() + 'static) -> Self {
         self.on_select = Some(Rc::new(f));
         self
@@ -231,7 +251,13 @@ impl RadioButton {
 
 impl IntoElement for RadioButton {
     fn into_element(self) -> AnyElement {
-        let disabled = self.disabled;
+        let disabled = self.disabled.clone();
+        super::rebuilt_on(disabled, move |d| self.clone().build(d))
+    }
+}
+
+impl RadioButton {
+    fn build(self, disabled: bool) -> AnyElement {
         let fg = move || if disabled { palette().disabled } else { palette().foreground };
         let selected = self.selected;
         let el = view()

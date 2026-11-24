@@ -29,13 +29,14 @@ pub enum Leading {
 
 /// A list row: a big title, an accent subtitle and a subtle detail line.
 /// Inside a sliding pivot pane its lines trail the pane, line by line.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct ListItem {
     title: SharedString,
     subtitle: Option<SharedString>,
     detail: Option<SharedString>,
     subtitle_accent: bool,
     leading: Option<Leading>,
-    leading_color: Option<Hsla>,
+    leading_color: Option<Reactive<Hsla>>,
     trailing: Option<AnyElement>,
     on_click: Option<ClickHandler>,
 }
@@ -81,8 +82,8 @@ impl ListItem {
         self.leading(Leading::Icon(icon))
     }
     /// The leading square's fill, instead of the accent.
-    pub fn leading_color(mut self, c: Hsla) -> Self {
-        self.leading_color = Some(c);
+    pub fn leading_color(mut self, c: impl IntoReactive<Hsla>) -> Self {
+        self.leading_color = Some(c.into_reactive());
         self
     }
     /// An element at the end of the row, such as a count or a chevron.
@@ -107,7 +108,13 @@ impl IntoElement for ListItem {
                 .items_center()
                 .justify_center()
                 .size(u(62.))
-                .bg(move || leading_color.unwrap_or(palette().accent))
+                .bg({
+                    let lc = leading_color.clone();
+                    move || match &lc {
+                        Some(c) => c.get(),
+                        None => palette().accent,
+                    }
+                })
                 .child(match l {
                     Leading::Icon(i) => i.render(32., ink),
                     Leading::Glyph(g) => {
@@ -154,15 +161,23 @@ impl IntoElement for ListItem {
 /// A run of items under one key (a letter).
 pub struct ListGroup {
     /// The key shown on the group's header square and in the jump grid.
-    pub key: SharedString,
+    key: SharedString,
     /// The group's rows.
-    pub items: Vec<AnyElement>,
+    items: Vec<AnyElement>,
 }
 
 impl ListGroup {
     /// A group of `items` under `key`.
     pub fn new(key: impl Into<SharedString>, items: impl IntoIterator<Item = AnyElement>) -> Self {
         Self { key: key.into(), items: items.into_iter().collect() }
+    }
+    /// The group's key.
+    pub fn key(&self) -> &SharedString {
+        &self.key
+    }
+    /// Adds a row to the end of the group.
+    pub fn push(&mut self, item: impl IntoElement) {
+        self.items.push(item.into_element());
     }
 }
 
@@ -174,6 +189,7 @@ pub const ALPHABET: [&str; 27] = [
 
 /// A grouped list whose group headers open a grid of keys; a key jumps to
 /// its group.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct JumpList {
     groups: Vec<ListGroup>,
     keys: Option<Vec<SharedString>>,
@@ -285,6 +301,7 @@ impl IntoElement for JumpList {
 }
 
 /// A field that opens in place into its list of choices.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct ListPicker {
     header: Option<SharedString>,
     items: Vec<SharedString>,

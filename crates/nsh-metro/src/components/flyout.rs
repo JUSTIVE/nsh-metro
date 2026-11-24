@@ -20,9 +20,10 @@ use crate::{
 };
 
 /// The two widths Windows 8 allowed.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum FlyoutWidth {
     /// 346 px: the usual settings pane.
+    #[default]
     Narrow,
     /// 646 px: room for richer content.
     Wide,
@@ -46,6 +47,7 @@ pub const FLYOUT_IN: f32 = 550.;
 pub const FLYOUT_OUT: f32 = 250.;
 
 /// A settings flyout. Place it as the last child of a `relative()` root.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct SettingsFlyout {
     open: Reactive<bool>,
     title: SharedString,

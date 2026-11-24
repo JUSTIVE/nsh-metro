@@ -52,9 +52,8 @@ pub fn round_buttons(s: DemoState) -> AnyElement {
             .on_click(move || s.playing.update(|p| *p = !*p))
     });
     let transport = row().gap(u(20.)).child(round_button(Icon::Previous)).child(play).child(round_button(Icon::Next));
-    let favorite = dynamic(move || {
-        round_button(Icon::Favorite).filled(s.favorite.get()).on_click(move || s.favorite.update(|f| *f = !*f))
-    });
+    // Bound, not rebuilt: the ring fills as the signal changes.
+    let favorite = round_button(Icon::Favorite).filled(s.favorite).on_click(move || s.favorite.update(|f| *f = !*f));
     page(
         "round button",
         stack()
@@ -94,14 +93,11 @@ pub fn hyperlinks(s: DemoState) -> AnyElement {
 }
 
 pub fn toggle_switches(s: DemoState) -> AnyElement {
-    // The wi-fi switch is disabled under airplane mode: built again when
-    // that changes (disabled is a build-time setting).
-    let wifi = dynamic(move || {
-        toggle_switch(move || s.wifi.get() && !s.airplane.get())
-            .header("wi-fi networking")
-            .disabled(s.airplane.get())
-            .on_change(move |v| s.wifi.set(v))
-    });
+    // The wi-fi switch is disabled under airplane mode.
+    let wifi = toggle_switch(move || s.wifi.get() && !s.airplane.get())
+        .header("wi-fi networking")
+        .disabled(s.airplane)
+        .on_change(move |v| s.wifi.set(v));
     page(
         "toggle switch",
         stack()

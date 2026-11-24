@@ -65,7 +65,7 @@ any component file by file.
 
 ## Porting checklist for another project
 
-1. Add `nsh-core`, `nsh-base` (`default-features = false`) and
+1. Add `nsh-core` and
    `nsh-platform-macos` (`features = ["svg"]`) from crates.io; Rust ≥ 1.97.
 2. Replace the app entry with `platform::run_app(AppSource::Rust(Root::of::<App>()), …)`
    and a `#[component] fn App()` returning `window().content(..)`.

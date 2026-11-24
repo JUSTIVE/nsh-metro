@@ -16,6 +16,7 @@ use crate::{
 };
 
 /// Show it with `when(move || open.get(), move || message_box(…))`.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct MessageBox {
     title: SharedString,
     message: Option<SharedString>,
@@ -88,6 +89,7 @@ impl IntoElement for MessageBox {
 }
 
 /// A toast notification: an accent band across the top.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct Toast {
     title: SharedString,
     message: Option<SharedString>,

@@ -42,7 +42,8 @@ thread_local! {
 /// lets it run at the screen's top rate as a transition does. On nsh the
 /// compositor moves the layers, so the cap is a look (Windows Phone's 60)
 /// rather than a saving; an app on a 120 Hz screen may want it lifted.
-/// Set it before the components are built.
+/// Set it before the components are built; animations already running keep
+/// the rate they started with.
 pub fn set_ambient_fps(fps: Option<f32>) {
     AMBIENT.with(|a| a.set(fps));
 }
@@ -196,12 +197,12 @@ pub const PANE_OUT: f32 = 130.;
 /// A pane's slide: progress runs 1 → 0 as it arrives; `sign` is +1 when it
 /// comes from the right. Lines inside the pane read it from the context and
 /// bind their own offsets to it, so one animation moves them all.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct PaneSlide {
     /// 1 while the pane is out at its start, 0 once it has arrived.
-    pub progress: AnimatedValue,
+    pub(crate) progress: AnimatedValue,
     /// +1 when the pane comes from the right, −1 from the left.
-    pub sign: AnimatedValue,
+    pub(crate) sign: AnimatedValue,
 }
 
 impl PaneSlide {

@@ -174,6 +174,7 @@ impl Accent {
 /// The resolved colour tokens for a mode + accent pair. Names follow the
 /// Windows Phone resource keys (`PhoneForegroundBrush`, `PhoneSubtleBrush`, …).
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
 pub struct Palette {
     /// The ground: black in dark mode, white in light (`PhoneBackgroundBrush`).
     pub background: Hsla,
@@ -290,7 +291,8 @@ pub fn font_family() -> SharedString {
 
 /// Sets the face every component is set in (registered with the platform
 /// first), as gpui-metro's `Theme::font_family` did. Call it before the
-/// first component is built: a component reads it when it is built.
+/// first component is built: a component reads it when it is built, and
+/// components already on screen keep the face they were built with.
 pub fn set_font_family(family: impl Into<SharedString>) {
     FAMILY.with(|f| *f.borrow_mut() = family.into());
 }
@@ -305,6 +307,7 @@ pub const SEMIBOLD: FontWeight = FontWeight::SEMIBOLD;
 /// The surface's theme. Change it with [`Theme::set_mode`] /
 /// [`Theme::set_accent`]; everything bound to [`palette`] follows.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[non_exhaustive]
 pub struct Theme {
     /// Dark or light ground.
     pub mode: Mode,

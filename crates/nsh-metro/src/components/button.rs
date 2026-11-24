@@ -16,18 +16,27 @@ use crate::{
 pub type ClickHandler = Rc<dyn Fn()>;
 
 /// `button("save").on_click(|| …)`
+#[must_use = "a builder does nothing until it is placed in the tree"]
+#[derive(Clone)]
 pub struct Button {
     label: SharedString,
     icon: Option<Icon>,
     on_click: Option<ClickHandler>,
-    disabled: bool,
+    disabled: Reactive<bool>,
     accent: bool,
     full_width: bool,
 }
 
 /// A bordered push button with `label` in it.
 pub fn button(label: impl Into<SharedString>) -> Button {
-    Button { label: label.into(), icon: None, on_click: None, disabled: false, accent: false, full_width: false }
+    Button {
+        label: label.into(),
+        icon: None,
+        on_click: None,
+        disabled: Reactive::Static(false),
+        accent: false,
+        full_width: false,
+    }
 }
 
 impl Button {
@@ -41,9 +50,10 @@ impl Button {
         self.icon = Some(icon);
         self
     }
-    /// Greys the button out and ignores taps.
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
+    /// Greys the button out and ignores taps (a value, or a signal or
+    /// closure for a state that changes).
+    pub fn disabled(mut self, disabled: impl IntoReactive<bool>) -> Self {
+        self.disabled = disabled.into_reactive();
         self
     }
     /// Filled with the accent: the primary action.
@@ -60,7 +70,13 @@ impl Button {
 
 impl IntoElement for Button {
     fn into_element(self) -> AnyElement {
-        let disabled = self.disabled;
+        let disabled = self.disabled.clone();
+        super::rebuilt_on(disabled, move |d| self.clone().build(d))
+    }
+}
+
+impl Button {
+    fn build(self, disabled: bool) -> AnyElement {
         let accent = self.accent && !disabled;
         let fg = move || {
             let p = palette();
@@ -110,17 +126,25 @@ impl IntoElement for Button {
 }
 
 /// The round icon button of the app bar and media controls.
+#[must_use = "a builder does nothing until it is placed in the tree"]
+#[derive(Clone)]
 pub struct RoundButton {
     icon: Icon,
     diameter: f32,
     on_click: Option<ClickHandler>,
-    disabled: bool,
-    filled: bool,
+    disabled: Reactive<bool>,
+    filled: Reactive<bool>,
 }
 
 /// A round button showing `icon`, 48 px across.
 pub fn round_button(icon: Icon) -> RoundButton {
-    RoundButton { icon, diameter: 48., on_click: None, disabled: false, filled: false }
+    RoundButton {
+        icon,
+        diameter: 48.,
+        on_click: None,
+        disabled: Reactive::Static(false),
+        filled: Reactive::Static(false),
+    }
 }
 
 impl RoundButton {
@@ -135,23 +159,31 @@ impl RoundButton {
         self
     }
     /// Greys the button out and ignores taps (and skips the tilt).
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
+    pub fn disabled(mut self, disabled: impl IntoReactive<bool>) -> Self {
+        self.disabled = disabled.into_reactive();
         self
     }
     /// Fills the ring with the foreground and draws the glyph in the
     /// ground colour: an "on" state, such as a playing media button.
-    pub fn filled(mut self, filled: bool) -> Self {
-        self.filled = filled;
+    pub fn filled(mut self, filled: impl IntoReactive<bool>) -> Self {
+        self.filled = filled.into_reactive();
         self
     }
 }
 
 impl IntoElement for RoundButton {
     fn into_element(self) -> AnyElement {
+        let disabled = self.disabled.clone();
+        super::rebuilt_on(disabled, move |d| self.clone().build(d))
+    }
+}
+
+impl RoundButton {
+    fn build(self, disabled: bool) -> AnyElement {
         let d = self.diameter;
-        let (disabled, filled) = (self.disabled, self.filled);
+        let filled = self.filled;
         let color = move || if disabled { palette().disabled } else { palette().foreground };
+        let (f1, f2) = (filled.clone(), filled);
         let ring = view()
             .items_center()
             .justify_center()
@@ -159,8 +191,8 @@ impl IntoElement for RoundButton {
             .rounded(px(d / 2.))
             .border(px(2.))
             .border_color(color)
-            .bg(move || if filled { color() } else { color().opacity(0.) })
-            .child(self.icon.render(d * 0.5, move || if filled { palette().background } else { color() }));
+            .bg(move || if f1.get() { color() } else { color().opacity(0.) })
+            .child(self.icon.render(d * 0.5, move || if f2.get() { palette().background } else { color() }));
         if disabled {
             return ring.into_element();
         }
@@ -174,6 +206,7 @@ impl IntoElement for RoundButton {
 }
 
 /// An underlined text link.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct HyperlinkButton {
     label: SharedString,
     on_click: Option<ClickHandler>,

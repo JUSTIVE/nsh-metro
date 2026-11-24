@@ -6,6 +6,8 @@ members = ["crates/nsh-metro", "apps/nsh-catalog", "apps/nsh-no-ativ", "apps/nsh
 edition = "2024"
 version = "0.1.0"
 license = "MIT"
+rust-version = "1.97"
+repository = "https://github.com/JUSTIVE/nsh-metro"
 
 [workspace.dependencies]
 # Longbridge's Native Shell (https://nsh.dev): native AppKit views on macOS.

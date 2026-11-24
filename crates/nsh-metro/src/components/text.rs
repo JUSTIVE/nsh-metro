@@ -5,7 +5,7 @@ use nsh_core::prelude::*;
 use crate::theme::{FONT_FAMILY, LIGHT, SEMIBOLD, SEMILIGHT, palette, size, u};
 
 /// A Metro text style.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum TextStyle {
     /// `PhoneTextTitle1Style`: page titles, 56 light.
     Title1,
@@ -18,6 +18,7 @@ pub enum TextStyle {
     /// `PhoneTextLargeStyle`: 27 semilight.
     Large,
     /// `PhoneTextNormalStyle`: 17 normal.
+    #[default]
     Normal,
     /// `PhoneTextSubtleStyle`: 17, subtle colour.
     Subtle,
@@ -84,6 +85,7 @@ pub fn label(content: impl IntoReactive<SharedString>) -> nsh_core::element::Tex
 
 /// `text(TextStyle::Large, "strains")`: a styled run of text. The content
 /// may be a value or a closure (`move || format!(…)`).
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct Text {
     style: TextStyle,
     content: Reactive<SharedString>,

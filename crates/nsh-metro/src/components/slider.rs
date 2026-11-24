@@ -13,17 +13,25 @@ use crate::theme::{FONT_FAMILY, palette, size, u};
 pub type ValueHandler = Rc<dyn Fn(f32)>;
 
 /// `slider(move || volume.get()).on_change(move |v| volume.set(v))`
+#[must_use = "a builder does nothing until it is placed in the tree"]
+#[derive(Clone)]
 pub struct Slider {
     value: Reactive<f32>,
     header: Option<Reactive<SharedString>>,
     step: Option<f32>,
-    disabled: bool,
+    disabled: Reactive<bool>,
     on_change: Option<ValueHandler>,
 }
 
 /// A slider at `value` (0–1; a value, or a signal or closure).
 pub fn slider(value: impl IntoReactive<f32>) -> Slider {
-    Slider { value: value.into_reactive(), header: None, step: None, disabled: false, on_change: None }
+    Slider {
+        value: value.into_reactive(),
+        header: None,
+        step: None,
+        disabled: Reactive::Static(false),
+        on_change: None,
+    }
 }
 
 impl Slider {
@@ -39,8 +47,8 @@ impl Slider {
         self
     }
     /// Greys the slider out and ignores presses.
-    pub fn disabled(mut self, disabled: bool) -> Self {
-        self.disabled = disabled;
+    pub fn disabled(mut self, disabled: impl IntoReactive<bool>) -> Self {
+        self.disabled = disabled.into_reactive();
         self
     }
     /// Runs `f` with the value under the pointer as it is pressed and dragged.
@@ -62,7 +70,13 @@ pub fn value_at(x: f32, width: f32, step: Option<f32>) -> f32 {
 
 impl IntoElement for Slider {
     fn into_element(self) -> AnyElement {
-        let disabled = self.disabled;
+        let disabled = self.disabled.clone();
+        super::rebuilt_on(disabled, move |d| self.clone().build(d))
+    }
+}
+
+impl Slider {
+    fn build(self, disabled: bool) -> AnyElement {
         let value = self.value;
         let v = {
             let value = value.clone();

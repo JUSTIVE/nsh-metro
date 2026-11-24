@@ -26,27 +26,36 @@ struct MenuItem {
     on_click: Option<ClickHandler>,
 }
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 /// How much of the bar shows when it is closed.
 pub enum AppBarMode {
     /// The full bar: its round buttons and the "…".
+    #[default]
     Default,
     /// A thin 30 px strip with only the "…"; it opens to the full bar.
     Minimized,
 }
 
+/// A fixed mode, where a mode that can change is taken.
+impl IntoReactive<AppBarMode> for AppBarMode {
+    fn into_reactive(self) -> Reactive<AppBarMode> {
+        Reactive::Static(self)
+    }
+}
+
 /// The application bar (WP8's `ApplicationBar`), docked at the bottom of a page.
 /// `app_bar().button(Icon::Add, "new", || …).menu_item("settings", || …)`
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct AppBar {
     buttons: Vec<BarButton>,
     items: Vec<MenuItem>,
-    mode: AppBarMode,
+    mode: Reactive<AppBarMode>,
     opacity: f32,
 }
 
 /// An empty, opaque app bar in [`AppBarMode::Default`].
 pub fn app_bar() -> AppBar {
-    AppBar { buttons: Vec::new(), items: Vec::new(), mode: AppBarMode::Default, opacity: 1. }
+    AppBar { buttons: Vec::new(), items: Vec::new(), mode: Reactive::Static(AppBarMode::Default), opacity: 1. }
 }
 
 impl AppBar {
@@ -69,8 +78,8 @@ impl AppBar {
         self
     }
     /// Full or minimized (default [`AppBarMode::Default`]).
-    pub fn mode(mut self, mode: AppBarMode) -> Self {
-        self.mode = mode;
+    pub fn mode(mut self, mode: impl IntoReactive<AppBarMode>) -> Self {
+        self.mode = mode.into_reactive();
         self
     }
     /// Opacity of the bar's chrome fill, 0–1 (default 1). The buttons stay
@@ -87,7 +96,12 @@ pub const MAX_BUTTONS: usize = 4;
 impl IntoElement for AppBar {
     fn into_element(self) -> AnyElement {
         let open = signal(false);
-        let minimized_mode = self.mode == AppBarMode::Minimized;
+        let mode = self.mode;
+        let minimized_mode = {
+            let mode = mode.clone();
+            move || mode.get() == AppBarMode::Minimized
+        };
+        let minimized_mode_h = minimized_mode.clone();
         let opacity = self.opacity;
         // Opening lifts the bar's content in and brightens it.
         let lift = animated_value(0.);
@@ -101,7 +115,7 @@ impl IntoElement for AppBar {
         let items = Rc::new(self.items);
         let body = move || {
             let expanded = open.get();
-            let minimized = minimized_mode && !expanded;
+            let minimized = minimized_mode() && !expanded;
             let row = view().flex_row().justify_center().pt(u(8.)).pb(u(if expanded { 4. } else { 10. })).children(
                 buttons.iter().map(|b| {
                     let mut rb = round_button(b.icon).diameter(44.).disabled(b.disabled);
@@ -149,7 +163,7 @@ impl IntoElement for AppBar {
             .top_0()
             .right_0()
             .w(u(56.))
-            .h(move || u(if minimized_mode && !open.get() { 30. } else { 36. }))
+            .h(move || u(if minimized_mode_h() && !open.get() { 30. } else { 36. }))
             .items_center()
             .pt(u(2.))
             .cursor_pointer()

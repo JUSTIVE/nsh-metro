@@ -29,6 +29,7 @@ pub struct PanoramaSection {
 /// The panorama (WP7's `Panorama`): a huge title over a strip of
 /// sections, the title drifting at [`PARALLAX`] of the strip's speed.
 /// `panorama("people", move || section.get()).section("recent", || …)`
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct Panorama {
     title: SharedString,
     sections: Vec<PanoramaSection>,

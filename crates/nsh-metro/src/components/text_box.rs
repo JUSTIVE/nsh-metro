@@ -14,6 +14,7 @@ use crate::components::text::label;
 use crate::theme::{FONT_FAMILY, palette, size, u};
 
 /// `text_box(name).header("name").placeholder("your name")`
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct TextBox {
     value: Signal<String>,
     header: Option<SharedString>,

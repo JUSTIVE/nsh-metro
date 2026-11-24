@@ -28,11 +28,12 @@ use crate::{
 };
 
 /// Tile footprints in grid units (one unit = one small tile).
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Hash)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq, Hash)]
 pub enum TileSize {
     /// 1×1
     Small,
     /// 2×2
+    #[default]
     Medium,
     /// 4×2
     Wide,
@@ -156,7 +157,8 @@ thread_local! {
 /// the default: each tile keeps its own time). Set it before the tiles are
 /// built. In gpui-metro this was a CPU saving: tiles sliding together
 /// share frames. On nsh slides cost almost nothing either way, so here it
-/// is only the look: waves instead of a scatter.
+/// is only the look: waves instead of a scatter. Tiles already on screen
+/// keep the timing they were built with.
 pub fn set_live_tile_beat(seconds: Option<f32>) {
     BEAT.with(|b| b.set(seconds.map(|s| s.max(1.))));
 }
@@ -228,13 +230,14 @@ fn peek(y: AnimatedValue, h: f32, period: f32, phase: f32) {
 pub type Face = Rc<dyn Fn(TileSize) -> AnyElement>;
 
 /// A start-screen tile.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct Tile {
     pub(crate) key: SharedString,
     pub(crate) size: TileSize,
-    title: Option<SharedString>,
+    title: Option<Reactive<SharedString>>,
     icon: Option<Icon>,
     count: Option<Reactive<u32>>,
-    color: Option<Hsla>,
+    color: Option<Reactive<Hsla>>,
     front: Option<Face>,
     back: Option<Face>,
     back_text: Option<(SharedString, Vec<SharedString>)>,
@@ -271,8 +274,8 @@ pub fn tile(key: impl Into<SharedString>, size: TileSize) -> Tile {
 
 impl Tile {
     /// The name in the bottom-left corner.
-    pub fn title(mut self, title: impl Into<SharedString>) -> Self {
-        self.title = Some(title.into());
+    pub fn title(mut self, title: impl IntoReactive<SharedString>) -> Self {
+        self.title = Some(title.into_reactive());
         self
     }
     /// The glyph on the default front face.
@@ -288,8 +291,8 @@ impl Tile {
         self
     }
     /// Override the accent background.
-    pub fn color(mut self, color: Hsla) -> Self {
-        self.color = Some(color);
+    pub fn color(mut self, color: impl IntoReactive<Hsla>) -> Self {
+        self.color = Some(color.into_reactive());
         self
     }
     /// Replace the default front face (icon + count).
@@ -341,14 +344,17 @@ impl IntoElement for Tile {
     fn into_element(self) -> AnyElement {
         let (w, h) = self.size.pixels(self.unit, self.gap);
         let size = self.size;
-        let color = self.color;
-        let bg = move || color.unwrap_or(palette().accent);
+        let color = self.color.clone();
+        let bg = move || match &color {
+            Some(c) => c.get(),
+            None => palette().accent,
+        };
         let ink = move || palette().accent_ink;
         let title = self.title.clone();
         let face = move |content: AnyElement| {
             view().relative().w(u(w)).h(u(h)).flex_shrink_0().overflow_hidden().child(content).children(
                 title.clone().map(|t| {
-                    label(t)
+                    label(move || t.get())
                         .absolute()
                         .left(u(8.))
                         .bottom(u(6.))
@@ -603,6 +609,7 @@ pub const GROUP_HEADER: f32 = 44.;
 /// The start screen: tiles packed by [`pack`] and positioned absolutely, in
 /// one column of blocks (the phone) or several named groups side by side
 /// (Windows 8).
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct TileGrid {
     tiles: Vec<Tile>,
     group_of: Vec<usize>,

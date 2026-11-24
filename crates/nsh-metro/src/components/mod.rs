@@ -30,3 +30,17 @@ pub mod text_box;
 pub use text_box::{TextBox, text_box};
 pub mod context_menu;
 pub use context_menu::{ContextMenu, context_menu, with_context_menu};
+
+/// `build(value)`, once for a fixed value and again whenever a bound one
+/// changes: for options that change a control's structure (its cursor,
+/// press style or input handling), not just a colour.
+pub(crate) fn rebuilt_on<T: Clone + 'static>(
+    value: nsh_core::prelude::Reactive<T>,
+    build: impl Fn(T) -> nsh_core::prelude::AnyElement + 'static,
+) -> nsh_core::prelude::AnyElement {
+    use nsh_core::prelude::*;
+    match value {
+        Reactive::Static(v) => build(v),
+        bound @ Reactive::Bound(_) => dynamic(move || build(bound.get())).into_element(),
+    }
+}

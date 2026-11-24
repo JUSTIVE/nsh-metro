@@ -33,7 +33,7 @@ pub fn list(app: App) -> PageView {
             let key = group_key(&strain.name);
             let item = strain_item(app, strain).into_element();
             match groups.last_mut() {
-                Some(g) if g.key.as_ref() == key.as_str() => g.items.push(item),
+                Some(g) if g.key().as_ref() == key.as_str() => g.push(item),
                 _ => groups.push(ListGroup::new(key, [item])),
             }
         }

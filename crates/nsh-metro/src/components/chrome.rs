@@ -11,6 +11,7 @@ use crate::{
 pub const PAGE_MARGIN: f32 = 24.;
 
 /// An app title in small caps over a huge lower-case page title.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct PageHeader {
     app_title: Option<SharedString>,
     title: SharedString,
@@ -42,22 +43,23 @@ impl IntoElement for PageHeader {
 }
 
 /// The phone's status bar: signal, wifi, battery and the time.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct SystemTray {
     time: Reactive<SharedString>,
-    battery: f32,
+    battery: Reactive<f32>,
     transparent: bool,
 }
 
 /// A system tray showing `time` (a value, or a signal or closure for a clock).
 /// Transparent over the page, with the battery at 80%.
 pub fn system_tray(time: impl IntoReactive<SharedString>) -> SystemTray {
-    SystemTray { time: time.into_reactive(), battery: 0.8, transparent: true }
+    SystemTray { time: time.into_reactive(), battery: Reactive::Static(0.8), transparent: true }
 }
 
 impl SystemTray {
     /// The battery's charge, 0–1 (default 0.8).
-    pub fn battery(mut self, level: f32) -> Self {
-        self.battery = level.clamp(0., 1.);
+    pub fn battery(mut self, level: impl IntoReactive<f32>) -> Self {
+        self.battery = level.into_reactive();
         self
     }
 
@@ -70,6 +72,7 @@ impl SystemTray {
 
 impl IntoElement for SystemTray {
     fn into_element(self) -> AnyElement {
+        let battery = self.battery.clone();
         let fg = move || palette().foreground;
         let transparent = self.transparent;
         let time = self.time;
@@ -105,7 +108,7 @@ impl IntoElement for SystemTray {
                                     .border_1()
                                     .border_color(fg)
                                     .p(u(1.5))
-                                    .child(view().h_full().w(relative(self.battery)).bg(fg)),
+                                    .child(view().h_full().w(move || relative(battery.get().clamp(0., 1.))).bg(fg)),
                             )
                             .child(view().w(u(2.)).h(u(5.)).bg(fg)),
                     )

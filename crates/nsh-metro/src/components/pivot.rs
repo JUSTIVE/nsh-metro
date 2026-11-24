@@ -28,6 +28,7 @@ pub type SelectHandler = Rc<dyn Fn(usize)>;
 pub type PaneBuilder = Rc<dyn Fn() -> AnyElement>;
 
 /// The pivot (WP7's `Pivot`): lower-case headers over one pane at a time.
+#[must_use = "a builder does nothing until it is placed in the tree"]
 pub struct Pivot {
     title: Option<SharedString>,
     headers: Vec<SharedString>,

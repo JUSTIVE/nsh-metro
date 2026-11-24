@@ -4,6 +4,11 @@ description = "Windows Phone Metro design language for Native Shell (nsh): live 
 edition.workspace = true
 version.workspace = true
 license.workspace = true
+rust-version.workspace = true
+repository.workspace = true
+readme = "../../README.md"
+keywords = ["ui", "metro", "design-system", "nsh", "windows-phone"]
+categories = ["gui"]
 
 [lints]
 workspace = true
