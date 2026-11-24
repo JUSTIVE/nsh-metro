@@ -65,6 +65,7 @@ pub enum Page {
     ListItem,
     JumpList,
     MessageBox,
+    ContextMenu,
     Toast,
     SettingsFlyout,
     SystemTray,
@@ -73,7 +74,7 @@ pub enum Page {
 }
 
 impl Page {
-    pub const ALL: [Page; 29] = [
+    pub const ALL: [Page; 30] = [
         Page::Palette,
         Page::Typography,
         Page::Icons,
@@ -98,6 +99,7 @@ impl Page {
         Page::ListItem,
         Page::JumpList,
         Page::MessageBox,
+        Page::ContextMenu,
         Page::Toast,
         Page::SettingsFlyout,
         Page::SystemTray,
@@ -129,7 +131,7 @@ impl Page {
             | Page::TextBox => Group::Controls,
             Page::ProgressBar | Page::ProgressDots | Page::ProgressRing => Group::Progress,
             Page::ListItem | Page::JumpList => Group::Lists,
-            Page::MessageBox | Page::Toast | Page::SettingsFlyout => Group::Overlays,
+            Page::MessageBox | Page::ContextMenu | Page::Toast | Page::SettingsFlyout => Group::Overlays,
             Page::SystemTray | Page::Header | Page::Motion => Group::Chrome,
         }
     }
@@ -161,6 +163,7 @@ impl Page {
             Page::ListItem => "list item",
             Page::JumpList => "jump list",
             Page::MessageBox => "message box",
+            Page::ContextMenu => "context menu",
             Page::Toast => "toast",
             Page::SettingsFlyout => "settings flyout",
             Page::SystemTray => "system tray",
@@ -239,6 +242,9 @@ impl Page {
             }
             Page::JumpList => {
                 "The LongListSelector: groups under accent letter squares. Tap a letter to open the jump grid; letters with no contacts are greyed out, the rest scroll the list to their group."
+            }
+            Page::ContextMenu => {
+                "The WP Toolkit's context menu: right-click a row (or press and hold it) and a chrome panel of lower-case commands swivels open at the pointer over a lightly dimmed page. A command closes the menu and runs; a click outside closes it. Near the window's right or bottom edge it opens to the left or above."
             }
             Page::MessageBox => {
                 "A full-width chrome band pinned to the top of the screen over a dimmed page. It blocks the page beneath, can carry extra content such as a check box, and offers up to two buttons. Tap the dimmed page to dismiss."
@@ -433,6 +439,15 @@ list_item("plain").subtle_subtitle()"#
     .groups(by_letter.map(|(key, rows)| {
         ListGroup::new(key, rows)
     }))"#
+            }
+            Page::ContextMenu => {
+                r#"with_context_menu(
+    list_item("kristin").subtitle("mobile"),
+    context_menu()
+        .item("pin to start", || ..)
+        .item("edit", || ..)
+        .disabled_item("delete")  // greyed out
+)"#
             }
             Page::MessageBox => {
                 r#"// last child of a relative() root

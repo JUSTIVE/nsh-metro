@@ -852,6 +852,27 @@ fn build(page: Page) -> Playground {
             )
             .height(360.)
         }
+        Page::ContextMenu => {
+            let n = signal(3f32);
+            let disabled = signal(true);
+            let last = signal(String::from("—"));
+            let preview = move || {
+                let mut m = nsh_metro::context_menu();
+                for i in 0..n.get() as usize {
+                    let name = ["pin to start", "edit", "share", "rename", "move"][i];
+                    m = m.item(name, move || last.set(name.to_string()));
+                }
+                if disabled.get() {
+                    m = m.disabled_item("delete");
+                }
+                view()
+                    .gap(u(8.))
+                    .child(nsh_metro::with_context_menu(list_item("right-click me").subtitle("or press and hold"), m))
+                    .child(label(move || format!("chose: {}", last.get())).text_size(u(size::SMALL)).text_color(move || palette().subtle))
+                    .into_element()
+            };
+            pg(preview, vec![number("commands", n, 1., 5., 1.), flag("disabled command", disabled)])
+        }
         Page::Toast => {
             let title = signal("no ativ".to_string());
             let message = signal("R-4712 harvested".to_string());

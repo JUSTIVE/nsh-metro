@@ -176,6 +176,7 @@ pub fn render(page: Page, s: DemoState, host: Host) -> AnyElement {
         Page::ListItem => lists::list_items(s),
         Page::JumpList => lists::contacts(),
         Page::MessageBox => overlays::message_box_page(s),
+        Page::ContextMenu => overlays::context_menu_page(),
         Page::Toast => overlays::toast_page(s),
         Page::SettingsFlyout => overlays::flyout_page(s),
         Page::SystemTray => chrome::tray_page(s),

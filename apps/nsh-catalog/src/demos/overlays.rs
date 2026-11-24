@@ -6,7 +6,7 @@ use std::time::Duration;
 
 use nsh_core::prelude::*;
 use nsh_metro::{
-    FlyoutWidth, Icon, TextStyle, button, check_box, message_box, settings_flyout, slider, text, toast, toggle_switch,
+    FlyoutWidth, Icon, TextStyle, button, context_menu, list_item, with_context_menu, check_box, message_box, settings_flyout, slider, text, toast, toggle_switch,
 };
 
 use super::{DemoState, caption, page, stack};
@@ -119,4 +119,28 @@ pub fn flyout_overlay(s: DemoState) -> AnyElement {
             .into_element()
     })
     .into_element()
+}
+
+pub fn context_menu_page() -> AnyElement {
+    let last = signal(SharedString::from("right-click or press and hold a row"));
+    let row = move |name: &'static str, sub: &'static str| {
+        let did = move |what: &'static str| move || last.set(SharedString::from(format!("{what}: {name}")));
+        with_context_menu(
+            list_item(name).subtitle(sub).leading(nsh_metro::Leading::Glyph(SharedString::from(&name[..2]))),
+            context_menu()
+                .item("pin to start", did("pinned"))
+                .item("edit", did("editing"))
+                .item("send message", did("message to"))
+                .disabled_item("delete"),
+        )
+    };
+    page(
+        "context menu",
+        stack()
+            .child(caption("right-click a row, or press and hold it"))
+            .child(row("kristin", "mobile"))
+            .child(row("ben thompson", "work"))
+            .child(row("anna", "home"))
+            .child(text(TextStyle::Accent, move || last.get())),
+    )
 }
