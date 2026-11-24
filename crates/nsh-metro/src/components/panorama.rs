@@ -55,6 +55,8 @@ impl Panorama {
 /// The title moves this fraction of the sections' distance.
 pub const PARALLAX: f32 = 0.4;
 const SETTLE: f32 = 450.;
+/// Extra time the title takes per section it runs back across.
+const TITLE_RUN_PER_SECTION: f32 = 120.;
 const INTRO: f32 = 650.;
 const INTRO_SECTIONS: f32 = 360.;
 const INTRO_TITLE: f32 = INTRO_SECTIONS * PARALLAX;
@@ -88,9 +90,15 @@ impl IntoElement for Panorama {
         let sw = self.section_width;
         let selected = self.selected;
         let first = untracked(|| selected.get()).min(len.saturating_sub(1));
-        // Strip position, in sections; `slots_at` is where the sections were
-        // last laid out for (they wrap around it).
+        // Strip position, in sections. It never wraps back: past the last
+        // section it keeps counting (the first section comes round again as
+        // section `len`), so it never has to jump. `slots_at` is where the
+        // sections are laid out around.
         let pos = animated_value(first as f32);
+        // The title's own position: the selected section's index, so past
+        // the last section it runs back to its start while the sections
+        // carry on, as the phone's panorama did.
+        let title_pos = animated_value(first as f32);
         let slots_at = signal(first as f32);
         let at = Rc::new(Cell::new(first as f32));
         let last = Rc::new(Cell::new(first));
@@ -98,7 +106,8 @@ impl IntoElement for Panorama {
             let (at, last) = (at.clone(), last.clone());
             effect(move || {
                 let sel = selected.get().min(len.saturating_sub(1));
-                if last.replace(sel) == sel {
+                let prev = last.replace(sel);
+                if prev == sel {
                     return;
                 }
                 untracked(|| {
@@ -109,21 +118,12 @@ impl IntoElement for Panorama {
                     at.set(to);
                     if reduced_motion() {
                         pos.set(to);
+                        title_pos.set(sel as f32);
                     } else {
-                        let end = pos.timing(to, SETTLE, EXP6_OUT);
-                        let at = at.clone();
-                        spawn(async move {
-                            if end.await && wraps {
-                                // Back into 0..len, invisibly.
-                                let l = len as f32;
-                                let norm = to.rem_euclid(l);
-                                if norm != to && at.get() == to {
-                                    at.set(norm);
-                                    pos.set(norm);
-                                    slots_at.set(norm);
-                                }
-                            }
-                        });
+                        let _ = pos.timing(to, SETTLE, EXP6_OUT);
+                        // A run back across the whole title takes a little longer.
+                        let span = (sel as f32 - prev as f32).abs();
+                        let _ = title_pos.timing(sel as f32, SETTLE + TITLE_RUN_PER_SECTION * (span - 1.).max(0.), EXP6_OUT);
                     }
                 });
             });
@@ -148,54 +148,48 @@ impl IntoElement for Panorama {
             .left(u(PAGE_MARGIN - 6.))
             .w(u(TITLE_ROOM))
             .h(u(140.))
-            .bind_translate_x(&pos.mul(-sw * PARALLAX).add(&intro.mul(INTRO_TITLE)))
+            .bind_translate_x(&title_pos.mul(-sw * PARALLAX).add(&intro.mul(INTRO_TITLE)))
             .child(title);
 
         let on_select = self.on_select.clone();
         let sections = Rc::new(self.sections);
-        let strip = {
-            let sections = sections.clone();
-            move || {
-                let around = slots_at.get();
-                view()
+        // Built once; a section's place follows `slots_at`, so a wrap moves
+        // it without rebuilding its content.
+        let strip = view()
+            .absolute()
+            .top_0()
+            .bottom_0()
+            .left(u(PAGE_MARGIN))
+            .bind_translate_x(&pos.mul(-sw).add(&intro.mul(INTRO_SECTIONS)))
+            .children(sections.iter().enumerate().map(|(ix, s)| {
+                let on_select = on_select.clone();
+                let section = view()
                     .absolute()
                     .top_0()
                     .bottom_0()
-                    .left(u(PAGE_MARGIN))
-                    .bind_translate_x(&pos.mul(-sw).add(&intro.mul(INTRO_SECTIONS)))
-                    .children(sections.iter().enumerate().map(|(ix, s)| {
-                        let slot = section_slot(ix, around, len, wraps);
-                        let on_select = on_select.clone();
-                        let section = view()
-                            .absolute()
-                            .top_0()
-                            .bottom_0()
-                            .left(u(slot * sw))
-                            .w(u(sw))
-                            .pr(u(PAGE_MARGIN))
-                            .child(
-                                label(SharedString::from(s.header.to_lowercase()))
-                                    .font_family(FONT_FAMILY)
-                                    .text_size(u(size::EXTRA_LARGE + 4.))
-                                    .font_weight(LIGHT)
-                                    .pb(u(10.))
-                                    .text_color(move || palette().foreground),
-                            )
-                            .child(view().flex_1().min_h(px(0.)).child((s.content)()));
-                        match on_select {
-                            Some(f) => section.cursor_pointer().on_press(move || f(ix)).into_element(),
-                            None => section.into_element(),
-                        }
-                    }))
-                    .into_element()
-            }
-        };
+                    .left(move || u(section_slot(ix, slots_at.get(), len, wraps) * sw))
+                    .w(u(sw))
+                    .pr(u(PAGE_MARGIN))
+                    .child(
+                        label(SharedString::from(s.header.to_lowercase()))
+                            .font_family(FONT_FAMILY)
+                            .text_size(u(size::EXTRA_LARGE + 4.))
+                            .font_weight(LIGHT)
+                            .pb(u(10.))
+                            .text_color(move || palette().foreground),
+                    )
+                    .child(view().flex_1().min_h(px(0.)).child((s.content)()));
+                match on_select {
+                    Some(f) => section.cursor_pointer().on_press(move || f(ix)).into_element(),
+                    None => section.into_element(),
+                }
+            }).collect::<Vec<_>>());
         let root = view()
             .relative()
             .size_full()
             .overflow_hidden()
             .child(title)
-            .child(view().absolute().top(u(132.)).bottom_0().left_0().right_0().child(dynamic(strip)));
+            .child(view().absolute().top(u(132.)).bottom_0().left_0().right_0().child(strip));
         match self.on_select.filter(|_| len > 1) {
             Some(f) => pager::pageable(
                 root,
