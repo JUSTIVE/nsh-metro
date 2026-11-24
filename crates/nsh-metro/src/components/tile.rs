@@ -805,33 +805,32 @@ impl IntoElement for TileGrid {
         let angles: Vec<AnimatedValue> =
             (0..n).map(|_| animated_value(if turnstile { ENTER_FROM_DEG } else { 0. })).collect();
         let positions = Rc::new(positions);
+        let track = motion::Track::default();
         let enter = {
-            let (angles, positions) = (angles.clone(), positions.clone());
+            let (angles, positions, track) = (angles.clone(), positions.clone(), track.clone());
             move || {
                 let delays = enter_schedule(&positions);
                 for a in &angles {
                     a.set(ENTER_FROM_DEG);
                 }
-                Animation::parallel(angles.iter().zip(&delays).map(|(a, &d)| {
+                track.run(Animation::parallel(angles.iter().zip(&delays).map(|(a, &d)| {
                     Animation::sequence([
                         Animation::delay(d),
                         Animation::timing(a, 0., Timing::new(motion::ENTER, EXP6_OUT)),
                     ])
-                }))
-                .start()
+                })))
             }
         };
         let exit = {
-            let (angles, positions) = (angles.clone(), positions.clone());
+            let (angles, positions, track) = (angles.clone(), positions.clone(), track.clone());
             move |tapped: usize| {
                 let (delays, _) = exit_schedule(&positions, tapped);
-                Animation::parallel(angles.iter().zip(&delays).map(|(a, &d)| {
+                track.run(Animation::parallel(angles.iter().zip(&delays).map(|(a, &d)| {
                     Animation::sequence([
                         Animation::delay(d),
                         Animation::timing(a, 90., Timing::new(EXIT_TILE, EXP6_IN)),
                     ])
-                }))
-                .start()
+                })))
             }
         };
         let busy = Rc::new(std::cell::Cell::new(false));
@@ -939,13 +938,15 @@ struct Slot {
     at: (f32, f32),
     /// Place in grid units, for the turnstile's row order.
     cell: (usize, usize),
+    /// The slide to its place, stopped if it moves again first.
+    moving: motion::Track,
     tile: Option<Tile>,
 }
 
 type Slots = Rc<RefCell<std::collections::HashMap<SharedString, Slot>>>;
 
 /// The turnstile-in over a reflowing grid's tiles, in `keys` order.
-fn slots_enter(slots: &Slots, keys: &[SharedString]) {
+fn slots_enter(slots: &Slots, keys: &[SharedString], track: &motion::Track) {
     let slots = slots.borrow();
     let tiles: Vec<&Slot> = keys.iter().filter_map(|k| slots.get(k)).collect();
     let cells: Vec<(usize, usize)> = tiles.iter().map(|s| s.cell).collect();
@@ -953,25 +954,28 @@ fn slots_enter(slots: &Slots, keys: &[SharedString]) {
     for t in &tiles {
         t.angle.set(ENTER_FROM_DEG);
     }
-    let _ = Animation::parallel(tiles.iter().zip(&delays).map(|(t, &d)| {
+    let _ = track.run(Animation::parallel(tiles.iter().zip(&delays).map(|(t, &d)| {
         Animation::sequence([
             Animation::delay(d),
             Animation::timing(&t.angle, 0., Timing::new(motion::ENTER, EXP6_OUT)),
         ])
-    }))
-    .start();
+    })));
 }
 
 /// The turnstile-out, `tapped` (an index into `keys`, or none) last.
-fn slots_exit(slots: &Slots, keys: &[SharedString], tapped: usize) -> nsh_core::element::AnimationEnd {
+fn slots_exit(
+    slots: &Slots,
+    keys: &[SharedString],
+    tapped: usize,
+    track: &motion::Track,
+) -> nsh_core::element::AnimationEnd {
     let slots = slots.borrow();
     let tiles: Vec<&Slot> = keys.iter().filter_map(|k| slots.get(k)).collect();
     let cells: Vec<(usize, usize)> = tiles.iter().map(|s| s.cell).collect();
     let (delays, _) = exit_schedule(&cells, tapped);
-    Animation::parallel(tiles.iter().zip(&delays).map(|(t, &d)| {
+    track.run(Animation::parallel(tiles.iter().zip(&delays).map(|(t, &d)| {
         Animation::sequence([Animation::delay(d), Animation::timing(&t.angle, 90., Timing::new(EXIT_TILE, EXP6_IN))])
-    }))
-    .start()
+    })))
 }
 
 impl TileGrid {
@@ -990,6 +994,7 @@ impl TileGrid {
         let mounted = Rc::new(std::cell::Cell::new(false));
         let turnstile = self.turnstile && !reduced_motion();
         let busy = Rc::new(std::cell::Cell::new(false));
+        let track = motion::Track::default();
         let on_tap = self.on_tap.clone();
         // Tiles' animated values belong to the grid, not to the effect: an
         // effect disposes what it made on its last run each time it runs.
@@ -998,6 +1003,7 @@ impl TileGrid {
             let slots = slots.clone();
             let slots_c = slots.clone();
             let busy = busy.clone();
+            let track = track.clone();
             effect(move || {
                 let tiles = source();
                 let columns = columns.get();
@@ -1039,7 +1045,8 @@ impl TileGrid {
                             // away first, the tapped one last.
                             let mut t = t;
                             if turnstile && let Some(launch) = t.on_click.take() {
-                                let (slots_c, busy, tap) = (slots_c.clone(), busy.clone(), on_tap.clone());
+                                let (slots_c, busy, tap, track) =
+                                    (slots_c.clone(), busy.clone(), on_tap.clone(), track.clone());
                                 let me = key.clone();
                                 t.on_click = Some(Rc::new(move || {
                                     if busy.replace(true) {
@@ -1050,7 +1057,7 @@ impl TileGrid {
                                     }
                                     let order = keys.get_untracked();
                                     let ix = order.iter().position(|k| *k == me).unwrap_or(usize::MAX);
-                                    let end = slots_exit(&slots_c, &order, ix);
+                                    let end = slots_exit(&slots_c, &order, ix, &track);
                                     let (launch, busy) = (launch.clone(), busy.clone());
                                     spawn(async move {
                                         end.await;
@@ -1067,7 +1074,16 @@ impl TileGrid {
                                 ])
                                 .start();
                             }
-                            let slot = Slot { x, y, angle, arrive, at: to, cell: (c, r), tile: Some(t) };
+                            let slot = Slot {
+                                x,
+                                y,
+                                angle,
+                                arrive,
+                                at: to,
+                                cell: (c, r),
+                                moving: motion::Track::default(),
+                                tile: Some(t),
+                            };
                             slots.insert(key, slot);
                         }
                     }
@@ -1079,38 +1095,37 @@ impl TileGrid {
                             slot.x.set(to.0);
                             slot.y.set(to.1);
                         } else {
-                            let _ = Animation::sequence([
+                            let _ = slot.moving.run(Animation::sequence([
                                 Animation::delay(delay),
                                 Animation::parallel([
                                     Animation::timing(&slot.x, to.0, Timing::new(REFLOW, EXP6_OUT)),
                                     Animation::timing(&slot.y, to.1, Timing::new(REFLOW, EXP6_OUT)),
                                 ]),
-                            ])
-                            .start();
+                            ]));
                         }
                     }
                     slots.retain(|k, _| new_keys.contains(k));
                     drop(slots);
                     keys.set(new_keys.clone());
                     if first && turnstile {
-                        slots_enter(&slots_c, &new_keys);
+                        slots_enter(&slots_c, &new_keys, &track);
                     }
                 });
             });
         }
         if turnstile {
             if let Some(replay) = self.replay {
-                let slots = slots.clone();
+                let (slots, track) = (slots.clone(), track.clone());
                 let first = RefCell::new(true);
                 effect(move || {
                     replay.get();
                     if !std::mem::replace(&mut *first.borrow_mut(), false) {
-                        untracked(|| slots_enter(&slots, &keys.get()));
+                        untracked(|| slots_enter(&slots, &keys.get(), &track));
                     }
                 });
             }
             if let Some(leave) = self.leave {
-                let slots = slots.clone();
+                let (slots, track) = (slots.clone(), track.clone());
                 let first = RefCell::new(true);
                 effect(move || {
                     let away = leave.get();
@@ -1119,9 +1134,9 @@ impl TileGrid {
                     }
                     untracked(|| {
                         if away {
-                            let _ = slots_exit(&slots, &keys.get(), usize::MAX);
+                            let _ = slots_exit(&slots, &keys.get(), usize::MAX, &track);
                         } else {
-                            slots_enter(&slots, &keys.get());
+                            slots_enter(&slots, &keys.get(), &track);
                         }
                     });
                 });

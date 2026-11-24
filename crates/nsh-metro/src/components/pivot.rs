@@ -120,11 +120,17 @@ pub fn is_forward(from: usize, to: usize, len: usize) -> bool {
         return true;
     }
     let ahead = (to + len - from) % len;
-    ahead != 0 && ahead <= len / 2
+    // Exactly half way round (always, with two panes) neither way is
+    // shorter: going up the list is forward, going down is back.
+    ahead != 0 && (2 * ahead < len || (2 * ahead == len && to > from))
 }
 
 impl IntoElement for Pivot {
     fn into_element(self) -> AnyElement {
+        if self.headers.is_empty() {
+            return view().into_element();
+        }
+        let entering = crate::motion::Track::default();
         let len = self.headers.len().max(1);
         let labels: Rc<Vec<SharedString>> =
             Rc::new(self.headers.iter().map(|h| SharedString::from(h.to_lowercase())).collect());
@@ -173,12 +179,11 @@ impl IntoElement for Pivot {
                     in_op.set(0.);
                     slide.sign.set(direction.sign());
                     slide.progress.set(1.);
-                    let _ = Animation::sequence([
+                    let _ = entering.run(Animation::sequence([
                         Animation::delay(PANE_OUT),
                         Animation::timing(&in_op, 1., Timing::new(1., Easing::Linear)),
                         Animation::timing(&slide.progress, 0., Timing::new(crate::motion::PANE_IN, EXP6_OUT)),
-                    ])
-                    .start();
+                    ]));
                     set_timeout(std::time::Duration::from_millis(PANE_OUT as u64 + 20), move || leaving.set(None));
                 });
             });
@@ -309,5 +314,10 @@ mod tests {
         assert!(!is_forward(1, 0, 4));
         assert!(is_forward(3, 0, 4));
         assert!(!is_forward(0, 3, 4));
+        // Half way round: up the list is forward, down is back.
+        assert!(is_forward(0, 1, 2));
+        assert!(!is_forward(1, 0, 2), "two panes: going back slides back");
+        assert!(is_forward(1, 3, 4));
+        assert!(!is_forward(3, 1, 4));
     }
 }

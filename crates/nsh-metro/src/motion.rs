@@ -88,6 +88,25 @@ pub const PERSPECTIVE: f32 = 1000.;
 /// turn's narrowing and a hint of depth, without the slant.
 pub const TURN_PERSPECTIVE: f32 = 2800.;
 
+/// One animation at a time on a set of values. nsh stops an earlier run
+/// of the *same* `Animation` when it starts again, but a new composite over
+/// the same values runs alongside the old one, whose delayed steps then
+/// fire late. Starting through a track stops the one before.
+#[derive(Clone, Default)]
+pub(crate) struct Track(Rc<std::cell::RefCell<Option<Animation>>>);
+
+impl Track {
+    /// Stops what this track was running, then starts `animation`.
+    pub(crate) fn run(&self, animation: Animation) -> AnimationEnd {
+        if let Some(old) = self.0.borrow_mut().take() {
+            old.stop();
+        }
+        let end = animation.start();
+        *self.0.borrow_mut() = Some(animation);
+        end
+    }
+}
+
 /// Which way navigation went; decides where a turnstile swings in from.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
 pub enum Direction {
