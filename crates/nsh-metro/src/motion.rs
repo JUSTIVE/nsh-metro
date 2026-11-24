@@ -58,6 +58,13 @@ pub const FORWARD_OUT_DEG: f32 = 90.;
 pub const BACKWARD_OUT_DEG: f32 = -90.;
 /// Camera distance for the projection, in px (Silverlight's `PlaneProjection`).
 pub const PERSPECTIVE: f32 = 1000.;
+/// Camera distance for the turnstile. Through the phone's 1000 px camera a
+/// page turning about the screen's edge keystones hard: its far edge
+/// shrinks and its lines slant, which read as a wobble rather than a turn.
+/// gpui-metro left the vertical perspective out altogether for that reason
+/// and only narrowed the page toward the hinge. A longer lens keeps the
+/// turn's narrowing and a hint of depth, without the slant.
+pub const TURN_PERSPECTIVE: f32 = 2800.;
 
 /// Which way navigation went; decides where a turnstile swings in from.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -92,7 +99,7 @@ pub fn hinge_origin(hinge: f32) -> TransformOrigin {
 /// (degrees), seen in perspective. The perspective sits on a wrapper: nsh,
 /// like CSS, gives a view's children their depth.
 pub fn turned(angle: &AnimatedValue, hinge: f32, child: impl IntoElement) -> View {
-    view().perspective(px(PERSPECTIVE)).child(
+    view().perspective(px(TURN_PERSPECTIVE)).child(
         view()
             .flex_1()
             .transform_origin(hinge_origin(hinge))

@@ -200,8 +200,26 @@ fn snippet(page: Page) -> AnyElement {
         .into_element()
 }
 
+/// How long the side column waits for the phone's page to turn away.
+const SIDE_DELAY: std::time::Duration = std::time::Duration::from_millis(260);
+
 fn main_area(page: Signal<Page>, demo: DemoState) -> AnyElement {
     let screen = phone::frame(page, demo);
+    let side_page = signal(page.get_untracked());
+    let epoch = std::rc::Rc::new(std::cell::Cell::new(0u64));
+    effect(move || {
+        let p = page.get();
+        let n = epoch.get() + 1;
+        epoch.set(n);
+        let epoch = epoch.clone();
+        untracked(|| {
+            set_timeout(SIDE_DELAY, move || {
+                if epoch.get() == n {
+                    side_page.set(p);
+                }
+            });
+        });
+    });
     scroll()
         .flex_1()
         .min_w(u(0.))
@@ -230,8 +248,14 @@ fn main_area(page: Signal<Page>, demo: DemoState) -> AnyElement {
                                 .min_w(u(260.))
                                 .max_w(u(560.))
                                 .gap(u(28.))
-                                .child(dynamic(move || crate::playground::render(page.get())))
-                                .child(dynamic(move || snippet(page.get()))),
+                                // The column follows the phone: it changes once the
+                                // old page has turned away, and turns in itself,
+                                // so the new page's build lands between the two
+                                // motions instead of stalling the first frame.
+                                .child(dynamic(move || {
+                                    let p = side_page.get();
+                                    turnstile_in(Direction::Forward, 0., 0., view().gap(u(28.)).child(crate::playground::render(p)).child(snippet(p)))
+                                })),
                         ),
                 ),
         )
