@@ -150,7 +150,10 @@ pub fn with_context_menu(el: impl IntoElement, menu: ContextMenu) -> AnyElement 
                     .on_press(|| {})
                     .children(rows.collect::<Vec<_>>()),
             );
+        // The overlay is the window's size only when told to cover it.
         overlay()
+            .absolute()
+            .inset_0()
             .child(
                 view()
                     .absolute()
