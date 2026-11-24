@@ -1,0 +1,26 @@
+[workspace]
+resolver = "2"
+members = ["crates/nsh-metro", "apps/nsh-catalog", "apps/nsh-no-ativ", "apps/nsh-perf-incubator", "apps/nsh-hello"]
+
+[workspace.package]
+edition = "2024"
+version = "0.1.0"
+license = "MIT"
+
+[workspace.dependencies]
+# Longbridge's Native Shell (https://nsh.dev): native AppKit views on macOS.
+nsh-core = "0.6.1"
+nsh-base = { version = "0.6.1", default-features = false }
+nsh-platform-macos = { version = "0.6.1", default-features = false, features = ["svg"] }
+nsh-metro = { path = "crates/nsh-metro" }
+
+[profile.dev]
+opt-level = 1
+
+[profile.dev.package."*"]
+opt-level = 3
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 1

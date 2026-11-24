@@ -1,5 +1,6 @@
 //! The performance incubator, for nsh-metro: the same stress scenes as
-//! `apps/perf-incubator` (gpui-metro), measured the same way, so the two
+//! `apps/perf-incubator` in gpui-metro (https://github.com/JUSTIVE/gpui-metro),
+//! measured the same way, so the two
 //! ports can be compared scene by scene.
 //!
 //! ```text

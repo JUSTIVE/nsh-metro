@@ -2,8 +2,8 @@
 
 How gpui-metro was moved to [Native Shell](https://nsh.dev) (nsh 0.6.1,
 macOS AppKit backend), written so another gpui project can follow the same
-path. nsh-metro sits beside gpui-metro in this repository; compare any
-component file by file.
+path. gpui-metro lives at https://github.com/JUSTIVE/gpui-metro; compare
+any component file by file.
 
 ## The model changes
 
@@ -75,4 +75,5 @@ component file by file.
 5. Replace per-frame animation with animated values; replace
    enter/exit-on-render with an effect that starts animations when a
    signal changes.
-6. Measure with both incubators (app CPU and WindowServer CPU).
+6. Measure with both incubators (app CPU and WindowServer CPU):
+   `apps/nsh-perf-incubator` here, `apps/perf-incubator` in gpui-metro.
