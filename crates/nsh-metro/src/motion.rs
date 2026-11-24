@@ -31,9 +31,27 @@ pub const IN_OUT_CUBIC: Easing = Easing::Curve(Curve::Cubic, EaseMode::InOut);
 /// gpui-metro. Transitions the user starts keep the screen's rate.
 pub const AMBIENT_FPS: f32 = 60.;
 
-/// A timing for ambient motion: capped at [`AMBIENT_FPS`].
+thread_local! {
+    static AMBIENT: std::cell::Cell<Option<f32>> = const { std::cell::Cell::new(Some(AMBIENT_FPS)) };
+}
+
+/// Sets the frame rate of ambient motion: `Some(fps)` caps it there, `None`
+/// lets it run at the screen's top rate as a transition does. On nsh the
+/// compositor moves the layers, so the cap is a look (Windows Phone's 60)
+/// rather than a saving; an app on a 120 Hz screen may want it lifted.
+/// Set it before the components are built.
+pub fn set_ambient_fps(fps: Option<f32>) {
+    AMBIENT.with(|a| a.set(fps));
+}
+
+/// A timing for ambient motion: capped at the ambient frame rate
+/// ([`set_ambient_fps`], [`AMBIENT_FPS`] unless set).
 pub fn ambient(ms: f32, easing: Easing) -> Timing {
-    Timing::new(ms, easing).frame_rate(AMBIENT_FPS)
+    let timing = Timing::new(ms, easing);
+    match AMBIENT.with(|a| a.get()) {
+        Some(fps) => timing.frame_rate(fps),
+        None => timing,
+    }
 }
 
 /// The exponential ease-out itself, for code that samples it.
