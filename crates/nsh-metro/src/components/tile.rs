@@ -578,6 +578,8 @@ pub struct TileGrid {
     leave: Option<ReadSignal<bool>>,
     hinge: f32,
     source: Option<Rc<dyn Fn() -> Vec<Tile>>>,
+    /// A width in columns that changes ([`TileGrid::live_columns`]).
+    live_columns: Option<Reactive<usize>>,
 }
 
 pub fn tile_grid() -> TileGrid {
@@ -593,6 +595,7 @@ pub fn tile_grid() -> TileGrid {
         leave: None,
         hinge: PAGE_MARGIN,
         source: None,
+        live_columns: None,
     }
 }
 
@@ -625,6 +628,17 @@ impl TileGrid {
     /// Grid width in small-tile units.
     pub fn columns(mut self, columns: usize) -> Self {
         self.columns = columns;
+        self
+    }
+    /// Grid width in small-tile units, for a grid whose tiles change
+    /// ([`TileGrid::source`]): a value, or a signal or closure for a width
+    /// that changes. When it does the tiles re-pack and slide to their new
+    /// places, as when a tile comes or goes, rather than the grid being built
+    /// again.
+    pub fn live_columns(mut self, columns: impl IntoReactive<usize>) -> Self {
+        let columns = columns.into_reactive();
+        self.columns = untracked(|| columns.get());
+        self.live_columns = Some(columns);
         self
     }
     pub fn metrics(mut self, unit: f32, gap: f32) -> Self {
@@ -896,9 +910,14 @@ fn slots_exit(slots: &Slots, keys: &[SharedString], tapped: usize) -> nsh_core::
 
 impl TileGrid {
     fn reflowing(self, source: Rc<dyn Fn() -> Vec<Tile>>) -> AnyElement {
-        let (unit, gap, columns, hinge) = (self.unit, self.gap, self.columns, self.hinge);
+        let (unit, gap, hinge) = (self.unit, self.gap, self.hinge);
+        let columns = self.live_columns.clone().unwrap_or(Reactive::Static(self.columns));
         let step = unit + gap;
-        let width = self.group_width();
+        let width_of = move |columns: usize| columns as f32 * unit + columns.saturating_sub(1) as f32 * gap;
+        let width = {
+            let columns = columns.clone();
+            move || u(width_of(columns.get()))
+        };
         let slots: Slots = Rc::default();
         let keys = signal(Vec::<SharedString>::new());
         let height = signal(0f32);
@@ -914,6 +933,7 @@ impl TileGrid {
             let busy = busy.clone();
             effect(move || {
                 let tiles = source();
+                let columns = columns.get();
                 untracked(|| {
                     let sizes: Vec<TileSize> = tiles.iter().map(|t| t.size).collect();
                     let packed = pack(&sizes, columns);
@@ -1066,7 +1086,7 @@ impl TileGrid {
                     .into_element()
             },
         );
-        view().relative().flex_shrink_0().w(u(width)).h(move || u(height.get())).child(tiles).into_element()
+        view().relative().flex_shrink_0().w(width).h(move || u(height.get())).child(tiles).into_element()
     }
 }
 
