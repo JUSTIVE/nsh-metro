@@ -192,7 +192,8 @@ fn peek(y: AnimatedValue, h: f32, period: f32, phase: f32) {
     let slide_ms = slide * period * 1000.;
     // The cycle began `t` of a period ago; its slides start at these
     // fractions of it.
-    let origin = Instant::now().checked_sub(std::time::Duration::from_secs_f32(t * period)).unwrap();
+    let now = Instant::now();
+    let origin = now.checked_sub(std::time::Duration::from_secs_f32(t * period)).unwrap_or(now);
     let (up_at, down_at) = (0.5 - slide, 1. - slide);
     // Where the cycle is now: the face it rests on (or the end of the slide
     // it is in), and which slide comes next, in which cycle.
@@ -879,11 +880,14 @@ impl IntoElement for TileGrid {
                         let end = exit(ix);
                         let (launch, busy) = (launch.clone(), busy.clone());
                         spawn(async move {
-                            end.await;
+                            let finished = end.await;
                             // The tiles stay away: the app is opening. A grid
                             // that stays on screen comes back with `replay`.
+                            // An exit cut short opens nothing.
                             busy.set(false);
-                            launch();
+                            if finished {
+                                launch();
+                            }
                         });
                     }));
                 }
@@ -1060,9 +1064,12 @@ impl TileGrid {
                                     let end = slots_exit(&slots_c, &order, ix, &track);
                                     let (launch, busy) = (launch.clone(), busy.clone());
                                     spawn(async move {
-                                        end.await;
+                                        // An exit cut short (a replay took over) opens nothing.
+                                        let finished = end.await;
                                         busy.set(false);
-                                        launch();
+                                        if finished {
+                                            launch();
+                                        }
                                     });
                                 }));
                             }
@@ -1154,14 +1161,17 @@ impl TileGrid {
                     .absolute()
                     .left_0()
                     .top_0()
-                    .bind_translate_x(&slot.x)
                     .bind_translate_y(&slot.y)
+                    // The turned plane stays at the grid's left edge and the
+                    // tile slides inside it, so the hinge (a fixed distance
+                    // from that edge) stays right after a reflow moves it.
                     .child(motion::turned(
                         &slot.angle,
-                        slot.at.0 + hinge,
+                        hinge,
                         // A new tile swings open about its own left edge,
                         // like a door, fading in as it comes square.
                         view()
+                            .bind_translate_x(&slot.x)
                             .bind_opacity(&slot.arrive.interpolate(&[0., 30., ARRIVE_FROM_DEG], &[1., 0.85, 0.]))
                             .child(motion::turned(&slot.arrive, 0., tile.unwrap_or_else(|| view().into_element()))),
                     ))
