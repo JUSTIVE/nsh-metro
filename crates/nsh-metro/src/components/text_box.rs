@@ -19,11 +19,12 @@ pub struct TextBox {
     placeholder: Option<SharedString>,
     masked: bool,
     on_submit: Option<Rc<dyn Fn(String)>>,
+    on_focus: Option<Rc<dyn Fn(bool)>>,
 }
 
 /// A text box editing `value`.
 pub fn text_box(value: Signal<String>) -> TextBox {
-    TextBox { value, header: None, placeholder: None, masked: false, on_submit: None }
+    TextBox { value, header: None, placeholder: None, masked: false, on_submit: None, on_focus: None }
 }
 
 impl TextBox {
@@ -40,6 +41,11 @@ impl TextBox {
         self.masked = true;
         self
     }
+    /// Focus gained (`true`) or lost.
+    pub fn on_focus_change(mut self, f: impl Fn(bool) + 'static) -> Self {
+        self.on_focus = Some(Rc::new(f));
+        self
+    }
     /// Return pressed, with the text.
     pub fn on_submit(mut self, f: impl Fn(String) + 'static) -> Self {
         self.on_submit = Some(Rc::new(f));
@@ -50,6 +56,12 @@ impl TextBox {
 impl IntoElement for TextBox {
     fn into_element(self) -> AnyElement {
         let focused = signal(false);
+        if let Some(f) = self.on_focus.clone() {
+            effect(move || {
+                let v = focused.get();
+                untracked(|| f(v));
+            });
+        }
         let value = self.value;
         let mut field = input()
             .value(move || value.get())

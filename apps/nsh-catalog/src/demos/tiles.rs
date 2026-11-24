@@ -173,18 +173,45 @@ pub fn grid_page(s: DemoState, host: Host) -> AnyElement {
 
 /// The turnstile on its own: tap any tile to watch it leave and come back.
 pub fn turnstile_page(s: DemoState, host: Host) -> AnyElement {
+    page(
+        "turnstile",
+        stack()
+            .child(caption("tap a tile: the tiles swing out, then back in"))
+            .child(
+                view()
+                    .flex_row()
+                    .gap(u(12.))
+                    .child(button("replay entrance").on_click(move || s.turnstile_replays.update(|n| *n += 1)))
+                    .child(button("pin a tile").on_click(move || s.pinned.update(|n| *n += 1)))
+                    .child(button("unpin").on_click(move || s.pinned.update(|n| *n = n.saturating_sub(1)))),
+            )
+            .child(
+                tile_grid()
+                    .turnstile(true)
+                    .leave(host.leaving.read_only())
+                    .replay(s.turnstile_replays.read_only())
+                    .source(move || turnstile_tiles(s, s.pinned.get())),
+            )
+            .child(caption(move || format!("{} launches", s.turnstile_exits.get()))),
+    )
+}
+
+/// The turnstile page's tiles, with `pinned` tiles after mail: pinning one
+/// slides the rest along to make room, and the new tile turns in.
+fn turnstile_tiles(s: DemoState, pinned: usize) -> Vec<nsh_metro::Tile> {
     let again = move |key: &'static str, size: TileSize, icon: Icon, color: Option<Accent>| {
         let t = tile(key, size).icon(icon).on_click(move || {
             s.turnstile_exits.update(|n| *n += 1);
-            // After the grid has re-armed itself, so the entrance replays.
-            spawn(async move { s.turnstile_replays.update(|n| *n += 1) });
+            s.turnstile_replays.update(|n| *n += 1);
         });
         match color {
             Some(c) => t.color(c.color()),
             None => t,
         }
     };
-    let tiles = vec![
+    const PINNED: [(TileSize, Icon); 4] =
+        [(TileSize::Small, Icon::Favorite), (TileSize::Medium, Icon::Camera), (TileSize::Small, Icon::Wifi), (TileSize::Wide, Icon::Flask)];
+    let mut tiles = vec![
         again("ts-mail", TileSize::Medium, Icon::Mail, None).title("mail"),
         again("ts-phone", TileSize::Small, Icon::Phone, Some(Accent::Teal)),
         again("ts-camera", TileSize::Small, Icon::Camera, Some(Accent::Magenta)),
@@ -194,51 +221,9 @@ pub fn turnstile_page(s: DemoState, host: Host) -> AnyElement {
         again("ts-music", TileSize::Medium, Icon::Play, Some(Accent::Crimson)).title("music"),
         again("ts-calendar", TileSize::Medium, Icon::Calendar, None).title("calendar"),
     ];
-    page(
-        "turnstile",
-        stack()
-            .child(caption("tap a tile: the tiles swing out, then back in"))
-            .child(
-                view()
-                    .flex_row()
-                    .gap(u(12.))
-                    .child(button("replay entrance").on_click(move || s.turnstile_replays.update(|n| *n += 1))),
-            )
-            .child(
-                tile_grid()
-                    .turnstile(true)
-                    .leave(host.leaving.read_only())
-                    .replay(s.turnstile_replays.read_only())
-                    .tiles(tiles),
-            )
-            .child(caption(move || format!("{} launches", s.turnstile_exits.get())))
-            .child(caption("pin a tile: the tiles after mail slide along to make room, and the new one turns in"))
-            .child(
-                view()
-                    .flex_row()
-                    .gap(u(12.))
-                    .child(button("pin a tile").on_click(move || s.pinned.update(|n| *n += 1)))
-                    .child(button("unpin").on_click(move || s.pinned.update(|n| *n = n.saturating_sub(1)))),
-            )
-            .child(tile_grid().source(move || pinned_tiles(s.pinned.get()))),
-    )
-}
-
-/// The reflow demo's tiles: a fixed set with `pinned` tiles after mail.
-fn pinned_tiles(pinned: usize) -> Vec<nsh_metro::Tile> {
-    const PINNED: [(TileSize, Icon); 4] =
-        [(TileSize::Small, Icon::Favorite), (TileSize::Medium, Icon::Camera), (TileSize::Small, Icon::Wifi), (TileSize::Wide, Icon::Flask)];
-    let mut tiles = vec![
-        tile("rf-mail", TileSize::Medium).icon(Icon::Mail).title("mail"),
-        tile("rf-phone", TileSize::Small).icon(Icon::Phone).color(Accent::Teal.color()),
-        tile("rf-camera", TileSize::Small).icon(Icon::Camera).color(Accent::Magenta.color()),
-        tile("rf-clock", TileSize::Small).icon(Icon::Clock),
-        tile("rf-search", TileSize::Small).icon(Icon::Search).color(Accent::Orange.color()),
-        tile("rf-people", TileSize::Wide).icon(Icon::People).color(Accent::Cobalt.color()).title("people"),
-    ];
     for n in (0..pinned).rev() {
         let (size, icon) = PINNED[n % PINNED.len()];
-        tiles.insert(1, tile(format!("rf-pinned-{n}"), size).icon(icon).color(Accent::ALL[(n * 7 + 3) % Accent::ALL.len()].color()));
+        tiles.insert(1, tile(format!("ts-pinned-{n}"), size).icon(icon).color(Accent::ALL[(n * 7 + 3) % Accent::ALL.len()].color()));
     }
     tiles
 }

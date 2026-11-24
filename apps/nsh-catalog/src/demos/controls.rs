@@ -1,11 +1,9 @@
 //! Buttons, selection controls, slider, list picker and text box.
 
 use nsh_core::prelude::*;
-use nsh_metro::label;
 use nsh_metro::{
-    Accent, Icon, TextStyle, Theme, button, check_box, hyperlink, list_picker, palette, radio_button, round_button,
+    Accent, Icon, TextStyle, Theme, button, check_box, hyperlink, list_picker, radio_button, round_button,
     slider, text, text_box,
-    theme::{FONT_FAMILY, size},
     toggle_switch, u,
 };
 
@@ -154,27 +152,20 @@ pub fn radio_buttons(s: DemoState) -> AnyElement {
 
 /// A slider header that follows its value. The library's header is fixed
 /// text, and rebuilding the slider mid-drag would end the drag.
-fn live_header(content: impl Fn() -> String + 'static) -> AnyElement {
-    label(content)
-        .font_family(FONT_FAMILY)
-        .text_size(u(size::NORMAL))
-        .text_color(move || palette().subtle)
-        .into_element()
-}
-
 pub fn sliders(s: DemoState) -> AnyElement {
     page(
         "slider",
         stack()
             .child(
-                view()
-                    .child(live_header(move || format!("ringer volume · {:.0}", s.volume.get() * 30.)))
-                    .child(slider(s.volume).on_change(move |v| s.volume.set(v))),
+                slider(s.volume)
+                    .header(move || format!("ringer volume · {:.0}", s.volume.get() * 30.))
+                    .on_change(move |v| s.volume.set(v)),
             )
             .child(
-                view()
-                    .child(live_header(move || format!("brightness · step 0.1 · {:.0}%", s.brightness.get() * 100.)))
-                    .child(slider(s.brightness).step(0.1).on_change(move |v| s.brightness.set(v))),
+                slider(s.brightness)
+                    .header(move || format!("brightness · step 0.1 · {:.0}%", s.brightness.get() * 100.))
+                    .step(0.1)
+                    .on_change(move |v| s.brightness.set(v)),
             )
             .child(slider(0.3).header("locked by policy").disabled(true))
             .child(caption("drag past the ends: the thumb keeps tracking")),
@@ -202,6 +193,7 @@ pub fn list_pickers(s: DemoState) -> AnyElement {
 }
 
 pub fn text_boxes(s: DemoState) -> AnyElement {
+    let focused = signal(false);
     let greeting = move || {
         let name = s.name.get();
         let name = name.trim();
@@ -210,9 +202,9 @@ pub fn text_boxes(s: DemoState) -> AnyElement {
     page(
         "text box",
         stack()
-            .child(text_box(s.name).header("name").placeholder("your name"))
+            .child(text_box(s.name).header("name").placeholder("your name").on_focus_change(move |f| focused.set(f)))
             .child(text(TextStyle::Large, greeting))
-            .child(caption("click the field to focus: white field, accent border"))
+            .child(caption(move || if focused.get() { "focused: white field, accent border" } else { "click the field to focus" }))
             .child(text_box(s.message).header("message").placeholder("type and press enter").on_submit(move |v| {
                 let sent = v.trim().to_string();
                 if !sent.is_empty() {

@@ -179,7 +179,6 @@ fn heading(page: Page) -> AnyElement {
         .child(
             sized(page.description(), size::NORMAL)
                 .max_w(u(860.))
-                .line_height(nsh_core::LineHeight::Points(px(24.)))
                 .text_color(move || palette().subtle),
         )
         .into_element()

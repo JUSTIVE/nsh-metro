@@ -14,7 +14,7 @@ pub type ValueHandler = Rc<dyn Fn(f32)>;
 
 pub struct Slider {
     value: Reactive<f32>,
-    header: Option<SharedString>,
+    header: Option<Reactive<SharedString>>,
     step: Option<f32>,
     disabled: bool,
     on_change: Option<ValueHandler>,
@@ -25,8 +25,9 @@ pub fn slider(value: impl IntoReactive<f32>) -> Slider {
 }
 
 impl Slider {
-    pub fn header(mut self, header: impl Into<SharedString>) -> Self {
-        self.header = Some(header.into());
+    /// The caption above; a value or a closure (`move || format!(…)`).
+    pub fn header(mut self, header: impl IntoReactive<SharedString>) -> Self {
+        self.header = Some(header.into_reactive());
         self
     }
     pub fn step(mut self, step: f32) -> Self {
@@ -113,7 +114,7 @@ impl IntoElement for Slider {
         };
         view()
             .gap(u(6.))
-            .children(self.header.map(|h| label(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
+            .children(self.header.map(|h| label(move || h.get()).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
             .child(bar)
             .into_element()
     }
