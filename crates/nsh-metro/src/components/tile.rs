@@ -580,6 +580,8 @@ pub struct TileGrid {
     source: Option<Rc<dyn Fn() -> Vec<Tile>>>,
     /// A width in columns that changes ([`TileGrid::live_columns`]).
     live_columns: Option<Reactive<usize>>,
+    /// Told the moment a tile is tapped ([`TileGrid::on_tap`]).
+    on_tap: Option<Rc<dyn Fn()>>,
 }
 
 pub fn tile_grid() -> TileGrid {
@@ -596,6 +598,7 @@ pub fn tile_grid() -> TileGrid {
         hinge: PAGE_MARGIN,
         source: None,
         live_columns: None,
+        on_tap: None,
     }
 }
 
@@ -662,6 +665,15 @@ impl TileGrid {
     /// left without a tile being tapped; back in when it turns false.
     pub fn leave(mut self, leave: impl Into<ReadSignal<bool>>) -> Self {
         self.leave = Some(leave.into());
+        self
+    }
+
+    /// Runs `f` the moment one of the grid's tiles is tapped, before the
+    /// turnstile swings the grid away and the tile's own `on_click` runs:
+    /// for what has to move along with it, such as other grids on the same
+    /// screen leaving with this one.
+    pub fn on_tap(mut self, f: impl Fn() + 'static) -> Self {
+        self.on_tap = Some(Rc::new(f));
         self
     }
 
@@ -769,6 +781,7 @@ impl IntoElement for TileGrid {
             }
         };
         let busy = Rc::new(std::cell::Cell::new(false));
+        let on_tap = self.on_tap.clone();
         if turnstile {
             let _ = enter();
             if let Some(replay) = self.replay {
@@ -802,10 +815,13 @@ impl IntoElement for TileGrid {
             .map(|(ix, (mut t, (x, y)))| {
                 // Route the click through the exit: animate first, launch after.
                 if turnstile && let Some(launch) = t.on_click.take() {
-                    let (exit, busy) = (exit.clone(), busy.clone());
+                    let (exit, busy, tap) = (exit.clone(), busy.clone(), on_tap.clone());
                     t.on_click = Some(Rc::new(move || {
                         if busy.replace(true) {
                             return;
+                        }
+                        if let Some(tap) = &tap {
+                            tap();
                         }
                         let end = exit(ix);
                         let (launch, busy) = (launch.clone(), busy.clone());
@@ -924,6 +940,7 @@ impl TileGrid {
         let mounted = Rc::new(std::cell::Cell::new(false));
         let turnstile = self.turnstile && !reduced_motion();
         let busy = Rc::new(std::cell::Cell::new(false));
+        let on_tap = self.on_tap.clone();
         // Tiles' animated values belong to the grid, not to the effect: an
         // effect disposes what it made on its last run each time it runs.
         let owner = Owner::current();
@@ -974,11 +991,14 @@ impl TileGrid {
                                 // away first, the tapped one last.
                                 let mut t = t;
                                 if turnstile && let Some(launch) = t.on_click.take() {
-                                    let (slots_c, busy) = (slots_c.clone(), busy.clone());
+                                    let (slots_c, busy, tap) = (slots_c.clone(), busy.clone(), on_tap.clone());
                                     let me = key.clone();
                                     t.on_click = Some(Rc::new(move || {
                                         if busy.replace(true) {
                                             return;
+                                        }
+                                        if let Some(tap) = &tap {
+                                            tap();
                                         }
                                         let order = keys.get_untracked();
                                         let ix = order.iter().position(|k| *k == me).unwrap_or(usize::MAX);
