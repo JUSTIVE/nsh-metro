@@ -1,0 +1,12 @@
+[package]
+name = "nsh-perf-incubator"
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+publish = false
+
+[dependencies]
+nsh-core.workspace = true
+nsh-platform-macos.workspace = true
+nsh-metro.workspace = true
+libc = "0.2"

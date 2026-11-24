@@ -1,0 +1,9 @@
+[package]
+name = "nsh-metro"
+description = "Windows Phone Metro design language for Native Shell (nsh): live tiles, pivot, panorama, app bar and friends."
+edition.workspace = true
+version.workspace = true
+license.workspace = true
+
+[dependencies]
+nsh-core = { workspace = true, features = ["svg"] }
