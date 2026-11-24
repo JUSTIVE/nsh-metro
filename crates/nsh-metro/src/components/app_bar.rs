@@ -106,7 +106,10 @@ impl IntoElement for AppBar {
         // Opening lifts the bar's content in and brightens it.
         let lift = animated_value(0.);
         effect(move || {
-            if open.get() && !untracked(reduced_motion) {
+            if !open.get() {
+                // Closing mid-lift: settle at rest rather than where it was.
+                lift.set(0.);
+            } else if !untracked(reduced_motion) {
                 lift.set(1.);
                 let _ = lift.timing(0., 260., EXP6_OUT);
             }
