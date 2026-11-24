@@ -58,6 +58,9 @@ const SETTLE: f32 = 450.;
 const INTRO: f32 = 650.;
 const INTRO_SECTIONS: f32 = 360.;
 const INTRO_TITLE: f32 = INTRO_SECTIONS * PARALLAX;
+/// Room the title lays out in: far wider than any screen, so a long title
+/// runs off the edge as on the phone instead of being cut short.
+const TITLE_ROOM: f32 = 4000.;
 
 /// Where section `ix` sits (in section widths) when the strip is at `pos`:
 /// with wrapping, the first section follows the last.
@@ -136,11 +139,14 @@ impl IntoElement for Panorama {
             .text_size(u(size::PANORAMA))
             .font_weight(LIGHT)
             .number_of_lines(1u32)
+            // Wider than the screen, cut by its edge, never ellipsized.
+            .text_overflow(nsh_core::EllipsizeMode::Clip)
             .text_color(move || palette().foreground);
         let title = view()
             .absolute()
             .top(u(-18.))
             .left(u(PAGE_MARGIN - 6.))
+            .w(u(TITLE_ROOM))
             .h(u(140.))
             .bind_translate_x(&pos.mul(-sw * PARALLAX).add(&intro.mul(INTRO_TITLE)))
             .child(title);

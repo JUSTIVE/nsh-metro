@@ -97,9 +97,17 @@ pub fn turned(angle: &AnimatedValue, hinge: f32, child: impl IntoElement) -> Vie
             .flex_1()
             .transform_origin(hinge_origin(hinge))
             .bind_transform(TransformKind::RotateY, angle)
+            // Edge-on, a plane off the camera's axis still shows its side in
+            // perspective: a thin sliver that lingers. It fades out over the
+            // last few degrees instead, as gpui-metro hid a turn whose
+            // projected width had all but gone.
+            .bind_opacity(&angle.interpolate(&[-90., -EDGE_ON_FADE, EDGE_ON_FADE, 90.], &[0., 1., 1., 0.]))
             .child(child),
     )
 }
+
+/// Past this angle (degrees) a turning element fades out toward edge-on.
+pub const EDGE_ON_FADE: f32 = 78.;
 
 /// Turnstile-in: a fresh angle that swings `child` in about a hinge `hinge`
 /// px to its left, after `delay` ms. Starts as it is built.
