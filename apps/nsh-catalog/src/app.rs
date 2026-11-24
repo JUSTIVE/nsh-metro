@@ -3,11 +3,12 @@
 //! [`DemoState`], created once, so it survives browsing.
 
 use nsh_core::prelude::*;
+use nsh_metro::label;
 use nsh_metro::{
     Accent, Icon, Mode, TextStyle, Theme, check_box,
     motion::{Direction, turnstile_in},
     palette, text, text_box,
-    theme::{FONT_FAMILY, LIGHT, SEMILIGHT, size},
+    theme::{LIGHT, SEMILIGHT, size},
     u,
 };
 
@@ -27,8 +28,8 @@ const MAIN_PAD: f32 = 40.;
 const MONO: &str = "Menlo";
 
 /// A run of plain text in the Metro face.
-fn label(content: impl IntoReactive<SharedString>, size: f32) -> Text {
-    nsh_core::prelude::text(content).font_family(FONT_FAMILY).text_size(u(size))
+fn sized(content: impl IntoReactive<SharedString>, size: f32) -> Text {
+    label(content).text_size(u(size))
 }
 
 pub fn catalog(page: Signal<Page>, demo: DemoState) -> AnyElement {
@@ -49,7 +50,7 @@ pub fn catalog(page: Signal<Page>, demo: DemoState) -> AnyElement {
 
 fn top_bar() -> AnyElement {
     let ground = |m: Mode| {
-        label(m.label(), size::MEDIUM)
+        sized(m.label(), size::MEDIUM)
             .px(u(6.))
             .text_color(move || if Theme::get().mode == m { palette().foreground } else { palette().subtle })
             .cursor_pointer()
@@ -85,7 +86,7 @@ fn top_bar() -> AnyElement {
                 .items_baseline()
                 .gap(u(10.))
                 .child(
-                    label("metro", size::EXTRA_LARGE)
+                    sized("metro", size::EXTRA_LARGE)
                         .font_weight(LIGHT)
                         .text_color(move || palette().foreground),
                 )
@@ -97,7 +98,7 @@ fn top_bar() -> AnyElement {
                 .flex_row()
                 .items_center()
                 .child(ground(Mode::Dark))
-                .child(label("/", size::MEDIUM).text_color(move || palette().disabled))
+                .child(sized("/", size::MEDIUM).text_color(move || palette().disabled))
                 .child(ground(Mode::Light)),
         )
         .child(
@@ -142,7 +143,7 @@ fn sidebar(page: Signal<Page>) -> AnyElement {
             .children(groups.into_iter().map(|(g, pages)| {
                 view().pb(u(14.)).child(view().pb(u(4.)).child(text(TextStyle::GroupHeader, g.name()))).children(
                     pages.into_iter().map(move |p| {
-                        label(p.name(), size::MEDIUM_LARGE)
+                        sized(p.name(), size::MEDIUM_LARGE)
                             .font_weight(SEMILIGHT)
                             .py(u(3.))
                             .text_color(move || if page.get() == p { palette().accent } else { palette().foreground })
@@ -170,13 +171,13 @@ fn heading(page: Page) -> AnyElement {
         .gap(u(6.))
         .child(text(TextStyle::AppTitle, page.group().name()).color(move || palette().accent))
         .child(
-            label(page.name(), size::HUGE)
+            sized(page.name(), size::HUGE)
                 .font_weight(LIGHT)
                 .line_height(nsh_core::LineHeight::Points(px(64.)))
                 .text_color(move || palette().foreground),
         )
         .child(
-            label(page.description(), size::NORMAL)
+            sized(page.description(), size::NORMAL)
                 .max_w(u(860.))
                 .line_height(nsh_core::LineHeight::Points(px(24.)))
                 .text_color(move || palette().subtle),
@@ -190,7 +191,7 @@ fn snippet(page: Page) -> AnyElement {
         .child(text(TextStyle::GroupHeader, "usage"))
         .child(
             view().p(u(18.)).bg(move || palette().chrome).children(page.snippet().lines().map(|line| {
-                nsh_core::prelude::text(line.to_string())
+                label(line.to_string())
                     .h(u(20.))
                     .font_family(MONO)
                     .text_size(u(13.))

@@ -5,6 +5,8 @@ use std::rc::Rc;
 
 use nsh_core::prelude::*;
 
+use crate::components::text::label;
+
 use crate::{
     Icon, motion,
     theme::{FONT_FAMILY, palette, size, u},
@@ -89,7 +91,7 @@ impl IntoElement for Button {
             el = el.child(icon.render(20., fg));
         }
         el = el.child(
-            text(self.label)
+            label(self.label)
                 .font_family(FONT_FAMILY)
                 .text_size(u(size::MEDIUM))
                 .text_color(fg),
@@ -179,7 +181,7 @@ impl HyperlinkButton {
 impl IntoElement for HyperlinkButton {
     fn into_element(self) -> AnyElement {
         let el = view().cursor_pointer().child(
-            text(self.label)
+            label(self.label)
                 .font_family(FONT_FAMILY)
                 .text_size(u(size::MEDIUM))
                 .underline()

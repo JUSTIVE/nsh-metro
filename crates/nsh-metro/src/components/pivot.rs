@@ -11,6 +11,8 @@ use std::rc::Rc;
 
 use nsh_core::prelude::*;
 
+use crate::components::text::label;
+
 use crate::{
     TextStyle,
     chrome::PAGE_MARGIN,
@@ -184,7 +186,7 @@ impl IntoElement for Pivot {
                             .flex_shrink_0()
                             .on_layout(move |b: &Bounds<Points>| widths.borrow_mut()[ix] = f32::from(b.size.width))
                             .child(
-                                nsh_core::prelude::text(labels[ix].clone())
+                                label(labels[ix].clone())
                                     .font_family(FONT_FAMILY)
                                     .text_size(u(HEADER_SIZE))
                                     .font_weight(LIGHT)

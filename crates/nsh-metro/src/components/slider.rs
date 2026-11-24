@@ -5,6 +5,8 @@ use std::rc::Rc;
 
 use nsh_core::prelude::*;
 
+use crate::components::text::label;
+
 use crate::theme::{FONT_FAMILY, palette, size, u};
 
 /// What a slider runs, with the new value (0–1).
@@ -111,7 +113,7 @@ impl IntoElement for Slider {
         };
         view()
             .gap(u(6.))
-            .children(self.header.map(|h| text(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
+            .children(self.header.map(|h| label(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
             .child(bar)
             .into_element()
     }

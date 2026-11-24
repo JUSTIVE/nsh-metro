@@ -5,6 +5,8 @@ use std::rc::Rc;
 
 use nsh_core::prelude::*;
 
+use crate::components::text::label;
+
 use crate::{
     Icon,
     button::{ClickHandler, round_button},
@@ -100,7 +102,7 @@ impl IntoElement for AppBar {
                     }
                     let disabled = b.disabled;
                     view().items_center().w(u(76.)).gap(u(4.)).child(rb).children(expanded.then(|| {
-                        text(SharedString::from(b.label.to_lowercase()))
+                        label(SharedString::from(b.label.to_lowercase()))
                             .font_family(FONT_FAMILY)
                             .text_size(u(size::SMALL - 2.))
                             .text_color(move || if disabled { palette().disabled } else { palette().foreground })
@@ -119,7 +121,7 @@ impl IntoElement for AppBar {
                             }
                         })
                         .child(
-                            text(SharedString::from(item.label.to_lowercase()))
+                            label(SharedString::from(item.label.to_lowercase()))
                                 .font_family(FONT_FAMILY)
                                 .text_size(u(size::MEDIUM_LARGE))
                                 .text_color(move || palette().foreground),

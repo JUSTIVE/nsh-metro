@@ -4,7 +4,7 @@ pub mod text;
 
 pub use button::{Button, ClickHandler, HyperlinkButton, RoundButton, button, hyperlink, round_button};
 pub use chrome::{PAGE_MARGIN, PageHeader, SystemTray, page_header, system_tray};
-pub use text::{Text, TextStyle, text};
+pub use text::{LINE_HEIGHT, Text, TextStyle, label, text};
 pub mod tile;
 pub use tile::{TILE_GAP, TILE_UNIT, Tile, TileGrid, TileSize, set_live_tile_beat, tile, tile_grid};
 pub mod progress;

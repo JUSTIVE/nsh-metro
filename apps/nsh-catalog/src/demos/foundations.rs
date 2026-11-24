@@ -1,6 +1,7 @@
 //! Accents and palette tokens, the type ramp, the icon set.
 
 use nsh_core::prelude::*;
+use nsh_metro::label;
 use nsh_metro::{
     Accent, Icon, Palette, TextStyle, Theme, palette, text,
     theme::{FONT_FAMILY, size},
@@ -26,7 +27,7 @@ pub fn palette_page() -> AnyElement {
                 move || view().absolute().top(u(6.)).right(u(6.)).child(Icon::Check.render(22., a.ink())),
             ))
             .child(
-                nsh_core::prelude::text(a.name())
+                label(a.name())
                     .absolute()
                     .left(u(8.))
                     .bottom(u(6.))
@@ -105,7 +106,7 @@ pub fn icons() -> AnyElement {
             .h(u(92.))
             .child(i.render(36., move || palette().foreground))
             .child(
-                nsh_core::prelude::text(i.name().replace('_', " "))
+                label(i.name().replace('_', " "))
                     .font_family(FONT_FAMILY)
                     .text_size(u(size::SMALL - 1.))
                     .text_color(move || palette().subtle),

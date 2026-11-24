@@ -10,6 +10,8 @@ use std::rc::Rc;
 
 use nsh_core::prelude::*;
 
+use crate::components::text::label;
+
 use crate::{
     chrome::PAGE_MARGIN,
     components::pager,
@@ -129,7 +131,7 @@ impl IntoElement for Panorama {
             let _ = intro.timing(0., INTRO, EXP6_OUT);
         }
 
-        let title = nsh_core::prelude::text(SharedString::from(self.title.to_lowercase()))
+        let title = label(SharedString::from(self.title.to_lowercase()))
             .font_family(FONT_FAMILY)
             .text_size(u(size::PANORAMA))
             .font_weight(LIGHT)
@@ -166,7 +168,7 @@ impl IntoElement for Panorama {
                             .w(u(sw))
                             .pr(u(PAGE_MARGIN))
                             .child(
-                                nsh_core::prelude::text(SharedString::from(s.header.to_lowercase()))
+                                label(SharedString::from(s.header.to_lowercase()))
                                     .font_family(FONT_FAMILY)
                                     .text_size(u(size::EXTRA_LARGE + 4.))
                                     .font_weight(LIGHT)
@@ -175,7 +177,7 @@ impl IntoElement for Panorama {
                             )
                             .child(view().flex_1().min_h(px(0.)).child((s.content)()));
                         match on_select {
-                            Some(f) => section.on_press(move || f(ix)).into_element(),
+                            Some(f) => section.cursor_pointer().on_press(move || f(ix)).into_element(),
                             None => section.into_element(),
                         }
                     }))

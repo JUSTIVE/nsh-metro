@@ -8,6 +8,7 @@
 
 use nsh_core::prelude::*;
 
+
 /// Dark or light background, the first of the phone's two theme choices.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Hash, Default)]
 pub enum Mode {

@@ -67,6 +67,17 @@ impl TextStyle {
     }
 }
 
+/// gpui's default line height (its golden ratio, 1.618 × the font size).
+/// gpui-metro left most text at it, so nsh-metro sets it on every label to
+/// keep the same rhythm; nsh's own default is the font's (about 1.2).
+pub const LINE_HEIGHT: f32 = 1.618;
+
+/// Plain text with the Metro defaults: the Metro face and gpui's line
+/// height. Use it wherever gpui-metro had a bare string child.
+pub fn label(content: impl IntoReactive<SharedString>) -> nsh_core::element::Text {
+    nsh_core::prelude::text(content).font_family(FONT_FAMILY).line_height(nsh_core::LineHeight::Multiple(LINE_HEIGHT))
+}
+
 /// `text(TextStyle::Large, "strains")`: a styled run of text. The content
 /// may be a value or a closure (`move || format!(…)`).
 pub struct Text {

@@ -10,6 +10,7 @@
 //! binds the second to the few properties that show live readings.
 
 use std::cell::RefCell;
+use nsh_metro::label;
 use std::rc::Rc;
 use std::time::Duration;
 
@@ -360,14 +361,14 @@ fn toast_host(app: App) -> AnyElement {
             .on_press(move || toast.set(None))
             .child(icon.render(22., ink))
             .child(
-                nsh_core::prelude::text(field(|t| t.title.clone()))
+                label(field(|t| t.title.clone()))
                     .font_family(FONT_FAMILY)
                     .text_size(u(size::NORMAL))
                     .font_weight(SEMIBOLD)
                     .text_color(ink),
             )
             .child(
-                nsh_core::prelude::text(field(|t| t.message.clone()))
+                label(field(|t| t.message.clone()))
                     .flex_1()
                     .min_w(px(0.))
                     .font_family(FONT_FAMILY)

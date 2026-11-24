@@ -1,6 +1,7 @@
 //! System tray, page header, and Metro's motions.
 
 use nsh_core::prelude::*;
+use nsh_metro::label;
 use nsh_metro::{
     Icon, Leading, TextStyle, TileSize, list_item,
     motion::{Direction, FEATHER, PaneSlide, swivel_in, turnstile_in},
@@ -22,7 +23,7 @@ pub fn tray_page(s: DemoState) -> AnyElement {
             .child(
                 view()
                     .child(
-                        nsh_core::prelude::text(move || format!("battery · {:.0}%", s.battery.get() * 100.))
+                        label(move || format!("battery · {:.0}%", s.battery.get() * 100.))
                             .font_family(nsh_metro::theme::FONT_FAMILY)
                             .text_size(u(nsh_metro::theme::size::NORMAL))
                             .text_color(move || palette().subtle),

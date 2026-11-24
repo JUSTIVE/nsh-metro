@@ -15,6 +15,7 @@ mod strains;
 mod telemetry;
 
 use nsh_core::prelude::*;
+use nsh_metro::label;
 use nsh_metro::{
     Accent, AppBar, PAGE_MARGIN, TextStyle, page_header, text,
     theme::FONT_FAMILY,
@@ -128,7 +129,7 @@ pub fn subtle(s: impl IntoReactive<SharedString>) -> nsh_metro::Text {
 
 /// Plain text in the Metro face at `size`, for the few one-off sizes.
 pub fn raw(s: impl IntoReactive<SharedString>, size: f32) -> nsh_core::prelude::Text {
-    nsh_core::prelude::text(s).font_family(FONT_FAMILY).text_size(u(size))
+    label(s).font_family(FONT_FAMILY).text_size(u(size))
 }
 
 /// What a detail page shows when its record has gone (e.g. a stale link).

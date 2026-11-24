@@ -1,6 +1,7 @@
 //! Pivot, panorama and the application bar.
 
 use nsh_core::prelude::*;
+use nsh_metro::label;
 use nsh_metro::{
     Accent, AppBarMode, Icon, PAGE_MARGIN, TILE_GAP, TextStyle, TileSize, app_bar, list_item, page_header, palette,
     panorama, pivot, text,
@@ -106,8 +107,8 @@ pub fn pivot_page(s: DemoState) -> AnyElement {
         .into_element()
 }
 
-fn big(label: &'static str) -> Text {
-    nsh_core::prelude::text(label)
+fn big(caption: &'static str) -> Text {
+    label(caption)
         .font_family(FONT_FAMILY)
         .text_size(u(size::EXTRA_LARGE))
         .font_weight(SEMILIGHT)

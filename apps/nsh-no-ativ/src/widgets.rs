@@ -1,6 +1,7 @@
 //! Small local stand-ins for what nsh-metro doesn't (yet) offer.
 
 use std::rc::Rc;
+use nsh_metro::label;
 
 use nsh_core::{element::input, prelude::*};
 use nsh_metro::{
@@ -34,7 +35,7 @@ pub fn text_box(value: Signal<String>, header: &str, placeholder: &str, editing:
     view()
         .gap(u(4.))
         .child(
-            text(SharedString::from(header.to_string()))
+            label(SharedString::from(header.to_string()))
                 .font_family(FONT_FAMILY)
                 .text_size(u(size::NORMAL))
                 .text_color(move || palette().subtle),
@@ -71,14 +72,14 @@ pub fn live_back(size: TileSize, headline: Line, lines: Vec<Line>, bg: Option<Rc
         None => face,
     };
     face.child(
-        text(move || headline())
+        label(move || headline())
             .font_family(FONT_FAMILY)
             .text_size(u(big))
             .line_height(nsh_core::LineHeight::Points(px(big + 4.)))
             .text_color(ink),
     )
     .children(lines.into_iter().map(move |l| {
-        text(move || l()).font_family(FONT_FAMILY).text_size(u(size::SMALL)).truncate().text_color(ink)
+        label(move || l()).font_family(FONT_FAMILY).text_size(u(size::SMALL)).truncate().text_color(ink)
     }))
     .into_element()
 }
@@ -88,7 +89,7 @@ pub fn live_back(size: TileSize, headline: Line, lines: Vec<Line>, bg: Option<Rc
 pub fn live_front(size: TileSize, icon: Icon, count: Rc<dyn Fn() -> u32>, bg: Rc<dyn Fn() -> Hsla>) -> AnyElement {
     let ink = move || palette().accent_ink;
     let icon_px = if size == TileSize::Small { 40. } else { 64. };
-    let label = move || {
+    let count_text = move || {
         let c = count();
         SharedString::from(if c > 0 { c.to_string() } else { String::new() })
     };
@@ -100,6 +101,6 @@ pub fn live_front(size: TileSize, icon: Icon, count: Rc<dyn Fn() -> u32>, bg: Rc
         .gap(u(8.))
         .bg(move || bg())
         .child(icon.render(icon_px, ink))
-        .child(text(label).font_family(FONT_FAMILY).text_size(u(size::HUGE * 0.8)).font_weight(LIGHT).text_color(ink))
+        .child(label(count_text).font_family(FONT_FAMILY).text_size(u(size::HUGE * 0.8)).font_weight(LIGHT).text_color(ink))
         .into_element()
 }

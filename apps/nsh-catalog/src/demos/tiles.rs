@@ -1,6 +1,7 @@
 //! Tiles in every size and face, and a packed start screen.
 
 use nsh_core::prelude::*;
+use nsh_metro::label;
 use nsh_metro::{
     Accent, Icon, PAGE_MARGIN, TILE_GAP, TILE_UNIT, TextStyle, Tile, TileSize, button,
     motion::{Direction, turnstile_in},
@@ -15,7 +16,7 @@ use crate::{host::Host, phone::SCREEN_W};
 /// A calendar-style front face: big date, next appointment.
 fn agenda(_: TileSize) -> AnyElement {
     let ink = Hsla::from(rgb(0xFFFFFF));
-    let line = |s: &'static str, size: f32| nsh_core::prelude::text(s).font_family(FONT_FAMILY).text_size(u(size)).text_color(ink);
+    let line = |s: &'static str, size: f32| label(s).font_family(FONT_FAMILY).text_size(u(size)).text_color(ink);
     view()
         .relative()
         .size_full()

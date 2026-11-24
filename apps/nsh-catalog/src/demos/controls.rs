@@ -1,6 +1,7 @@
 //! Buttons, selection controls, slider, list picker and text box.
 
 use nsh_core::prelude::*;
+use nsh_metro::label;
 use nsh_metro::{
     Accent, Icon, TextStyle, Theme, button, check_box, hyperlink, list_picker, palette, radio_button, round_button,
     slider, text, text_box,
@@ -154,7 +155,7 @@ pub fn radio_buttons(s: DemoState) -> AnyElement {
 /// A slider header that follows its value. The library's header is fixed
 /// text, and rebuilding the slider mid-drag would end the drag.
 fn live_header(content: impl Fn() -> String + 'static) -> AnyElement {
-    nsh_core::prelude::text(content)
+    label(content)
         .font_family(FONT_FAMILY)
         .text_size(u(size::NORMAL))
         .text_color(move || palette().subtle)

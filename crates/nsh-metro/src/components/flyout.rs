@@ -10,6 +10,8 @@ use std::rc::Rc;
 
 use nsh_core::prelude::*;
 
+use crate::components::text::label;
+
 use crate::{
     Icon,
     button::ClickHandler,
@@ -155,7 +157,7 @@ impl IntoElement for SettingsFlyout {
                 .bg(move || palette().accent)
                 .child(back_button)
                 .child(
-                    text(title.clone())
+                    label(title.clone())
                         .font_family(FONT_FAMILY)
                         .text_size(u(size::LARGE))
                         .font_weight(SEMILIGHT)

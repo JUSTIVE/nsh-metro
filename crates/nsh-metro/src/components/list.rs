@@ -5,6 +5,8 @@ use std::rc::Rc;
 
 use nsh_core::prelude::*;
 
+use crate::components::text::label;
+
 use crate::{
     Icon,
     button::ClickHandler,
@@ -93,19 +95,19 @@ impl IntoElement for ListItem {
                 .bg(move || leading_color.unwrap_or(palette().accent))
                 .child(match l {
                     Leading::Icon(i) => i.render(32., ink),
-                    Leading::Glyph(g) => text(g).font_family(FONT_FAMILY).text_size(u(size::LARGE)).text_color(ink).into_element(),
+                    Leading::Glyph(g) => label(g).font_family(FONT_FAMILY).text_size(u(size::LARGE)).text_color(ink).into_element(),
                     Leading::Element(e) => e,
                 })
         });
         let accent = self.subtitle_accent;
         let line = |s: SharedString, color: Rc<dyn Fn() -> Hsla>| {
-            text(s).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).truncate().text_color(move || color())
+            label(s).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).truncate().text_color(move || color())
         };
         let body = view()
             .flex_1()
             .min_w(px(0.))
             .child(
-                text(self.title)
+                label(self.title)
                     .font_family(FONT_FAMILY)
                     .text_size(u(size::LARGE + 3.))
                     .font_weight(SEMILIGHT)
@@ -193,7 +195,7 @@ impl IntoElement for JumpList {
                 .bg(move || palette().accent)
                 .cursor_pointer()
                 .on_press(move || grid_open.set(true))
-                .child(text(key).font_family(FONT_FAMILY).text_size(u(size::LARGE + 3.)).text_color(move || palette().accent_ink))
+                .child(label(key).font_family(FONT_FAMILY).text_size(u(size::LARGE + 3.)).text_color(move || palette().accent_ink))
         };
         let list = scroll().size_full().child(
             view()
@@ -213,7 +215,7 @@ impl IntoElement for JumpList {
                     .p(u(8.))
                     .bg(move || if enabled { palette().accent } else { palette().chrome })
                     .child(
-                        text(key)
+                        label(key)
                             .font_family(FONT_FAMILY)
                             .text_size(u(size::EXTRA_LARGE + 6.))
                             .font_weight(LIGHT)
@@ -298,7 +300,7 @@ impl IntoElement for ListPicker {
                                         f(ix);
                                     }
                                 })
-                                .child(text(item).text_color(move || if ix == sel { palette().accent } else { palette().foreground }))
+                                .child(label(item).text_color(move || if ix == sel { palette().accent } else { palette().foreground }))
                         }))
                         .into_element()
                 } else {
@@ -307,7 +309,7 @@ impl IntoElement for ListPicker {
                         .py(u(6.))
                         .cursor_pointer()
                         .on_press(move || open.set(true))
-                        .child(text(items.get(sel).cloned().unwrap_or_default()).text_color(move || palette().foreground))
+                        .child(label(items.get(sel).cloned().unwrap_or_default()).text_color(move || palette().foreground))
                         .into_element()
                 }
             }
@@ -315,7 +317,7 @@ impl IntoElement for ListPicker {
         view()
             .gap(u(4.))
             .children(self.header.map(|h| {
-                text(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)
+                label(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)
             }))
             .child(
                 view()

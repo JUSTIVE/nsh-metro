@@ -3,6 +3,8 @@
 use std::rc::Rc;
 
 use nsh_core::prelude::*;
+
+use crate::components::text::label;
 use nsh_core::{TransformKind, element::TransformOrigin};
 
 use crate::{
@@ -73,7 +75,7 @@ impl IntoElement for ToggleSwitch {
             });
         }
         let (on_label, off_label) = self.labels;
-        let label = {
+        let shown_label = {
             let on = on.clone();
             move || if on.get() { on_label.clone() } else { off_label.clone() }
         };
@@ -101,11 +103,11 @@ impl IntoElement for ToggleSwitch {
             .flex_row()
             .items_center()
             .justify_between()
-            .child(text(label).font_family(FONT_FAMILY).text_size(u(size::LARGE)).text_color(fg))
+            .child(label(shown_label).font_family(FONT_FAMILY).text_size(u(size::LARGE)).text_color(fg))
             .child(track);
         let el = view()
             .gap(u(4.))
-            .children(self.header.map(|h| text(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
+            .children(self.header.map(|h| label(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
             .child(row);
         match self.on_change.filter(|_| !disabled) {
             Some(f) => el.cursor_pointer().on_press(move || f(!untracked(|| on.get()))).into_element(),
@@ -165,7 +167,7 @@ impl IntoElement for CheckBox {
                     .border_color(fg)
                     .child(view().opacity(mark).child(Icon::Check.render(22., fg))),
             )
-            .children(self.label.map(|l| text(l).font_family(FONT_FAMILY).text_size(u(size::MEDIUM)).text_color(fg)));
+            .children(self.label.map(|l| label(l).font_family(FONT_FAMILY).text_size(u(size::MEDIUM)).text_color(fg)));
         match self.on_change.filter(|_| !disabled) {
             Some(f) => el.cursor_pointer().active(|s| s.opacity(0.7)).on_press(move || f(!untracked(|| checked.get()))).into_element(),
             None => el.into_element(),
@@ -221,7 +223,7 @@ impl IntoElement for RadioButton {
                     .border_color(fg)
                     .child(view().size(u(14.)).rounded(px(7.)).bg(fg).opacity(move || if selected.get() { 1f32 } else { 0f32 })),
             )
-            .children(self.label.map(|l| text(l).font_family(FONT_FAMILY).text_size(u(size::MEDIUM)).text_color(fg)));
+            .children(self.label.map(|l| label(l).font_family(FONT_FAMILY).text_size(u(size::MEDIUM)).text_color(fg)));
         match self.on_select.filter(|_| !disabled) {
             Some(f) => el.cursor_pointer().active(|s| s.opacity(0.7)).on_press(move || f()).into_element(),
             None => el.into_element(),

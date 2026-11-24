@@ -17,6 +17,8 @@ use std::time::Instant;
 
 use nsh_core::prelude::*;
 
+use crate::components::text::label;
+
 use crate::{
     Icon,
     button::ClickHandler,
@@ -310,7 +312,7 @@ impl IntoElement for Tile {
                 .overflow_hidden()
                 .child(content)
                 .children(title.clone().map(|t| {
-                    text(t)
+                    label(t)
                         .absolute()
                         .left(u(8.))
                         .bottom(u(6.))
@@ -369,7 +371,7 @@ fn back_text_face(size: TileSize, headline: SharedString, lines: Vec<SharedStrin
         .gap(u(2.))
         .overflow_hidden()
         .child(
-            text(headline)
+            label(headline)
                 .font_family(FONT_FAMILY)
                 .text_size(u(big))
                 .line_height(nsh_core::LineHeight::Points(px(big + 4.)))
@@ -378,7 +380,7 @@ fn back_text_face(size: TileSize, headline: SharedString, lines: Vec<SharedStrin
         .children(
             lines
                 .into_iter()
-                .map(|l| text(l).font_family(FONT_FAMILY).text_size(u(size::SMALL)).truncate().text_color(ink)),
+                .map(|l| label(l).font_family(FONT_FAMILY).text_size(u(size::SMALL)).truncate().text_color(ink)),
         )
         .into_element()
 }
@@ -398,7 +400,7 @@ fn default_front(size: TileSize, icon: Option<Icon>, count: Option<u32>) -> AnyE
             .justify_center()
             .children(icon.map(|i| i.render(icon_px, ink)))
             .children(count.map(|c| {
-                text(c.to_string())
+                label(c.to_string())
                     .absolute()
                     .top(u(4.))
                     .right(u(8.))
@@ -415,7 +417,7 @@ fn default_front(size: TileSize, icon: Option<Icon>, count: Option<u32>) -> AnyE
             .gap(u(8.))
             .children(icon.map(|i| i.render(icon_px, ink)))
             .children(count.map(|c| {
-                text(c.to_string())
+                label(c.to_string())
                     .font_family(FONT_FAMILY)
                     .text_size(u(size::HUGE * 0.8))
                     .font_weight(LIGHT)
@@ -631,7 +633,7 @@ impl IntoElement for TileGrid {
             .filter_map(|(g, title)| {
                 let title = title.clone()?;
                 Some(
-                    text(SharedString::from(title.to_lowercase()))
+                    label(SharedString::from(title.to_lowercase()))
                         .absolute()
                         .left(u(group_x(g)))
                         .top_0()

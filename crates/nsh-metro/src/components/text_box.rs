@@ -9,6 +9,8 @@ use std::rc::Rc;
 
 use nsh_core::{element::input, prelude::*};
 
+use crate::components::text::label;
+
 use crate::theme::{FONT_FAMILY, palette, size, u};
 
 pub struct TextBox {
@@ -71,7 +73,7 @@ impl IntoElement for TextBox {
         }
         view()
             .gap(u(4.))
-            .children(self.header.map(|h| text(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
+            .children(self.header.map(|h| label(h).font_family(FONT_FAMILY).text_size(u(size::NORMAL)).text_color(move || palette().subtle)))
             .child(
                 view()
                     .flex_row()
