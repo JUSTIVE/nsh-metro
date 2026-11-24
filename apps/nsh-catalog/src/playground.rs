@@ -294,7 +294,7 @@ fn build(page: Page) -> Playground {
             const SIZES: [&str; 4] = ["small", "medium", "wide", "large"];
             let size_of = |i: usize| [TileSize::Small, TileSize::Medium, TileSize::Wide, TileSize::Large][i];
             let preview = move || {
-                let mut t = tile("pg-tile", size_of(sz.get())).count(count.get() as u32).metrics(80., 10.);
+                let mut t = tile("pg-tile", size_of(sz.get())).count(move || count.get() as u32).metrics(80., 10.);
                 let tt = title.get();
                 if !tt.is_empty() {
                     t = t.title(tt);

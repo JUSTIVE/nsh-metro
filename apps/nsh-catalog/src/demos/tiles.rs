@@ -29,13 +29,12 @@ fn agenda(_: TileSize) -> AnyElement {
 }
 
 pub fn tile_page(s: DemoState) -> AnyElement {
-    let mail = dynamic(move || {
-        tile("tile-mail", TileSize::Medium)
-            .title("mail")
-            .icon(Icon::Mail)
-            .count(s.mail_count.get())
-            .on_click(move || s.mail_count.update(|n| *n += 1))
-    });
+    // The count is bound, not rebuilt: a new one pushes the glyph aside.
+    let mail = tile("tile-mail", TileSize::Medium)
+        .title("mail")
+        .icon(Icon::Mail)
+        .count(s.mail_count)
+        .on_click(move || s.mail_count.update(|n| *n += 1));
     let smalls = view()
         .flex_row()
         .flex_wrap()
@@ -120,7 +119,7 @@ fn start_tiles(s: DemoState) -> Vec<Tile> {
         tile("start-mail", TileSize::Medium)
             .title("outlook")
             .icon(Icon::Mail)
-            .count(s.mail_count.get_untracked())
+            .count(s.mail_count)
             .on_click(launch(Launched::Pivot)),
         tile("start-calendar", TileSize::Medium)
             .title("calendar")

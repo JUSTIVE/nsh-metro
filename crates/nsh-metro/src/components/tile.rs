@@ -205,7 +205,7 @@ pub struct Tile {
     pub(crate) size: TileSize,
     title: Option<SharedString>,
     icon: Option<Icon>,
-    count: Option<u32>,
+    count: Option<Reactive<u32>>,
     color: Option<Hsla>,
     front: Option<Face>,
     back: Option<Face>,
@@ -247,9 +247,11 @@ impl Tile {
         self.icon = Some(icon);
         self
     }
-    /// The notification count (hidden at 0, as on the phone).
-    pub fn count(mut self, count: u32) -> Self {
-        self.count = Some(count);
+    /// The notification count (hidden at 0, as on the phone): a value, or
+    /// a signal or closure for a count that changes. When it appears the
+    /// glyph slides aside to make room and the number fades in beside it.
+    pub fn count(mut self, count: impl IntoReactive<u32>) -> Self {
+        self.count = Some(count.into_reactive());
         self
     }
     /// Override the accent background.
@@ -385,45 +387,123 @@ fn back_text_face(size: TileSize, headline: SharedString, lines: Vec<SharedStrin
         .into_element()
 }
 
-fn default_front(size: TileSize, icon: Option<Icon>, count: Option<u32>) -> AnyElement {
-    let count = count.filter(|&c| c > 0);
+/// How long the glyph takes to move aside for a count (or back), in ms.
+pub const COUNT_SHIFT: f32 = 350.;
+/// Gap between the glyph and the count beside it.
+const COUNT_GAP: f32 = 8.;
+/// How far the count slides in from as it fades in.
+const COUNT_SLIDE: f32 = 14.;
+
+fn default_front(size: TileSize, icon: Option<Icon>, count: Option<Reactive<u32>>) -> AnyElement {
     let ink = move || palette().accent_ink;
     let icon_px = match size {
         TileSize::Small => 40.,
         TileSize::Medium | TileSize::Wide => 64.,
         TileSize::Large => 96.,
     };
+    let count = count.unwrap_or(Reactive::Static(0));
+    let initial = untracked(|| count.get()) > 0;
+    // 0 = no count showing, 1 = shown; eases between on a change.
+    let shown = animated_value(if initial { 1. } else { 0. });
+    // The last count shown stays while it fades out at 0.
+    let last = Rc::new(std::cell::Cell::new(untracked(|| count.get())));
+    let digits = {
+        let count = count.clone();
+        move || {
+            let c = count.get();
+            if c > 0 {
+                last.set(c);
+            }
+            SharedString::from(match last.get() {
+                0 => String::new(),
+                n => n.to_string(),
+            })
+        }
+    };
+    {
+        let count = count.clone();
+        effect(move || {
+            let on = count.get() > 0;
+            untracked(|| {
+                let to = if on { 1. } else { 0. };
+                if reduced_motion() {
+                    shown.set(to);
+                } else {
+                    let _ = shown.timing(to, COUNT_SHIFT, EXP6_OUT);
+                }
+            });
+        });
+    }
     match size {
+        // Small: the glyph stays put; the count fades in in the corner.
         TileSize::Small => view()
             .size_full()
             .items_center()
             .justify_center()
             .children(icon.map(|i| i.render(icon_px, ink)))
-            .children(count.map(|c| {
-                label(c.to_string())
+            .child(
+                label(digits)
                     .absolute()
                     .top(u(4.))
                     .right(u(8.))
                     .font_family(FONT_FAMILY)
                     .text_size(u(size::NORMAL))
                     .text_color(ink)
-            }))
+                    .bind_opacity(&shown),
+            )
             .into_element(),
-        _ => view()
-            .size_full()
-            .flex_row()
-            .items_center()
-            .justify_center()
-            .gap(u(8.))
-            .children(icon.map(|i| i.render(icon_px, ink)))
-            .children(count.map(|c| {
-                label(c.to_string())
-                    .font_family(FONT_FAMILY)
-                    .text_size(u(size::HUGE * 0.8))
-                    .font_weight(LIGHT)
-                    .text_color(ink)
-            }))
-            .into_element(),
+        // Larger: the glyph sits centred alone; a count pushes it left by
+        // half the count's width (and the gap), so the pair is centred.
+        _ => {
+            let width = animated_value(0.);
+            let measured = Rc::new(std::cell::Cell::new(0f32));
+            let half = shown.mul(&width.add(COUNT_GAP)).mul(0.5);
+            let has_icon = icon.is_some();
+            let glyph_w = if has_icon { icon_px } else { 0. };
+            let number = label(digits)
+                .font_family(FONT_FAMILY)
+                .text_size(u(size::HUGE * 0.8))
+                .font_weight(LIGHT)
+                .number_of_lines(1u32)
+                .text_color(ink)
+                .on_layout(move |b: &Bounds<Points>| {
+                    let w = f32::from(b.size.width);
+                    if (measured.replace(w) - w).abs() > 0.5 {
+                        if reduced_motion() {
+                            width.set(w);
+                        } else {
+                            let _ = width.timing(w, COUNT_SHIFT, EXP6_OUT);
+                        }
+                    }
+                });
+            view()
+                .size_full()
+                .relative()
+                .children(icon.map(|i| {
+                    view()
+                        .absolute()
+                        .inset_0()
+                        .items_center()
+                        .justify_center()
+                        .bind_translate_x(&half.mul(-1.))
+                        .child(i.render(icon_px, ink))
+                }))
+                .child(
+                    // The count starts just right of the glyph's resting
+                    // centre and rides left with it.
+                    view()
+                        .absolute()
+                        .top_0()
+                        .bottom_0()
+                        .left(relative(0.5))
+                        .ml(u(glyph_w / 2. + if has_icon { COUNT_GAP } else { 0. }))
+                        .justify_center()
+                        .bind_translate_x(&half.mul(-1.).add(&shown.interpolate(&[0., 1.], &[COUNT_SLIDE, 0.])))
+                        .bind_opacity(&shown)
+                        .child(number),
+                )
+                .into_element()
+        }
     }
 }
 
@@ -750,8 +830,12 @@ pub const REFLOW: f32 = 400.;
 /// Gap between rows as they slide: the push travels down from the change.
 const REFLOW_STEP: f32 = 30.;
 const REFLOW_WAVE_MAX: f32 = 150.;
-/// A new tile waits this long for the others to make room, then turns in.
-const ARRIVE_AFTER: f32 = 120.;
+/// A new tile waits this long for the others to start making room.
+const ARRIVE_AFTER: f32 = 160.;
+/// How long a new tile takes to swing open into place, in ms.
+const ARRIVE: f32 = 520.;
+/// Where a new tile swings open from: turned away about its left edge.
+const ARRIVE_FROM_DEG: f32 = 75.;
 
 /// Start delays (ms) for a reflow: the moving tiles' rows, nearest the
 /// change (`origin`) first.
@@ -773,6 +857,8 @@ struct Slot {
     x: AnimatedValue,
     y: AnimatedValue,
     angle: AnimatedValue,
+    /// A new tile's flip into place about its own left edge (degrees).
+    arrive: AnimatedValue,
     at: (f32, f32),
     /// Place in grid units, for the turnstile's row order.
     cell: (usize, usize),
@@ -855,9 +941,15 @@ impl TileGrid {
                             }
                             None => {
                                 let arriving = !first && !reduced;
-                                let start = if arriving || (first && turnstile) { ENTER_FROM_DEG } else { 0. };
-                                let (angle, x, y) =
-                                    owner.run(|| (animated_value(start), animated_value(to.0), animated_value(to.1)));
+                                let start = if first && turnstile { ENTER_FROM_DEG } else { 0. };
+                                let (angle, arrive, x, y) = owner.run(|| {
+                                    (
+                                        animated_value(start),
+                                        animated_value(if arriving { ARRIVE_FROM_DEG } else { 0. }),
+                                        animated_value(to.0),
+                                        animated_value(to.1),
+                                    )
+                                });
                                 // On a turnstile grid a tap swings the tiles
                                 // away first, the tapped one last.
                                 let mut t = t;
@@ -883,11 +975,11 @@ impl TileGrid {
                                     origin = origin.min(r);
                                     let _ = Animation::sequence([
                                         Animation::delay(ARRIVE_AFTER),
-                                        Animation::timing(&angle, 0., Timing::new(motion::ENTER, EXP6_OUT)),
+                                        Animation::timing(&arrive, 0., Timing::new(ARRIVE, EXP6_OUT)),
                                     ])
                                     .start();
                                 }
-                                let slot = Slot { x, y, angle, at: to, cell: (c, r), tile: Some(t) };
+                                let slot = Slot { x, y, angle, arrive, at: to, cell: (c, r), tile: Some(t) };
                                 slots.insert(key, slot);
                             }
                         }
@@ -962,7 +1054,15 @@ impl TileGrid {
                     .top_0()
                     .bind_translate_x(&slot.x)
                     .bind_translate_y(&slot.y)
-                    .child(motion::turned(&slot.angle, slot.at.0 + hinge, tile.unwrap_or_else(|| view().into_element())))
+                    .child(motion::turned(
+                        &slot.angle,
+                        slot.at.0 + hinge,
+                        // A new tile swings open about its own left edge,
+                        // like a door, fading in as it comes square.
+                        view()
+                            .bind_opacity(&slot.arrive.interpolate(&[0., 30., ARRIVE_FROM_DEG], &[1., 0.85, 0.]))
+                            .child(motion::turned(&slot.arrive, 0., tile.unwrap_or_else(|| view().into_element()))),
+                    ))
                     .into_element()
             },
         );
