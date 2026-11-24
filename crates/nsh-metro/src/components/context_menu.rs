@@ -60,9 +60,20 @@ pub fn place(at: (f32, f32), menu: (f32, f32), window: (f32, f32)) -> (f32, f32)
     (x, y)
 }
 
-/// `el` with `menu` on right-click and press-and-hold.
+/// Which menu is open in the window, and where: one at a time.
+#[derive(Clone, Copy, Default, PartialEq)]
+struct OpenMenu(Option<(u64, (f32, f32))>);
+
+thread_local! {
+    static NEXT_ID: std::cell::Cell<u64> = const { std::cell::Cell::new(1) };
+}
+
+/// `el` with `menu` on right-click and press-and-hold. Opening it closes
+/// any other context menu in the window.
 pub fn with_context_menu(el: impl IntoElement, menu: ContextMenu) -> AnyElement {
-    let open = signal(None::<(f32, f32)>);
+    let id = NEXT_ID.with(|n| n.replace(n.get() + 1));
+    let shared = global::<OpenMenu>();
+    let open = Opener { id, shared };
     let on_open = menu.on_open.clone();
     effect(move || {
         let o = open.get().is_some();
@@ -154,6 +165,35 @@ pub fn with_context_menu(el: impl IntoElement, menu: ContextMenu) -> AnyElement 
             .into_element()
     };
     view().child(target).child(dynamic(layer)).into_element()
+}
+
+/// This menu's view of the window's one open menu.
+#[derive(Clone, Copy)]
+struct Opener {
+    id: u64,
+    shared: Signal<OpenMenu>,
+}
+
+impl Opener {
+    /// Where this menu is open (tracked), if it is the one open.
+    fn get(&self) -> Option<(f32, f32)> {
+        match self.shared.get().0 {
+            Some((id, at)) if id == self.id => Some(at),
+            _ => None,
+        }
+    }
+    fn set(&self, at: Option<(f32, f32)>) {
+        let id = self.id;
+        match at {
+            Some(at) => self.shared.set(OpenMenu(Some((id, at)))),
+            // Closing closes this menu only, not one opened since.
+            None => self.shared.update(|m| {
+                if m.0.is_some_and(|(open, _)| open == id) {
+                    m.0 = None;
+                }
+            }),
+        }
+    }
 }
 
 #[cfg(test)]
