@@ -229,7 +229,9 @@ fn main_area(page: Signal<Page>, demo: DemoState) -> AnyElement {
                             view()
                                 .flex_1()
                                 .min_w(u(260.))
-                                .max_w(u(520.))
+                                .max_w(u(560.))
+                                .gap(u(28.))
+                                .child(dynamic(move || crate::playground::render(page.get())))
                                 .child(dynamic(move || snippet(page.get()))),
                         ),
                 ),

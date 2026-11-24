@@ -12,6 +12,7 @@ mod demos;
 mod host;
 mod pages;
 mod phone;
+mod playground;
 
 use nsh_core::prelude::*;
 use nsh_metro::{Mode, Theme};
