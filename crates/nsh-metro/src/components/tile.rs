@@ -160,40 +160,58 @@ pub fn on_beat(period: f32, phase: f32, slide: f32, beat: f32) -> (f32, f32) {
     (period, phase.rem_euclid(1.))
 }
 
-/// The peek as one looping animation of `y` (0 → −h → 0), starting where
-/// the cycle is now so tiles keep their phases.
-fn peek_animation(y: &AnimatedValue, h: f32, period: f32, phase: f32) -> Animation {
-    let (period, _phase, start) = match BEAT.with(|b| b.get()) {
+/// The peek, slide by slide (0 → −h, rest, −h → 0, rest), starting where
+/// the cycle is now so tiles keep their phases. Each slide is an animation
+/// of its own and the rests between them are timers: a looping animation
+/// kept the display link running through its delays, and the window was
+/// drawn again on every frame of every rest. Now between slides nothing
+/// animates and the link stops. Slides are timed from the cycle's start, so
+/// tiles on a beat stay on it however long they run.
+fn peek(y: AnimatedValue, h: f32, period: f32, phase: f32) {
+    let (period, t) = match BEAT.with(|b| b.get()) {
         Some(beat) => {
             let (p, ph) = on_beat(period, phase, PEEK_SLIDE_SECS, beat);
             let since = EPOCH.with(|e| e.elapsed().as_secs_f32());
-            (p, ph, (since / p + ph).fract())
+            (p, (since / p + ph).fract())
         }
-        None => (period, phase, phase),
+        None => (period, phase),
     };
-    let ms = period * 1000.;
     let slide = (PEEK_SLIDE_SECS / period).clamp(0.001, 0.5);
-    let rest = (0.5 - slide) * ms;
-    let slide_ms = slide * ms;
-    let up = || Animation::timing(y, -h, motion::ambient(slide_ms, IN_OUT_CUBIC));
-    let down = || Animation::timing(y, 0., motion::ambient(slide_ms, IN_OUT_CUBIC));
-    let cycle = Animation::sequence([Animation::delay(rest), up(), Animation::delay(rest), down()]).looped(None);
-    // The rest of the current cycle, then the loop from its start.
-    let t = start;
-    let first: Vec<Animation> = if t < 0.5 - slide {
+    let slide_ms = slide * period * 1000.;
+    // The cycle began `t` of a period ago; its slides start at these
+    // fractions of it.
+    let origin = Instant::now() - std::time::Duration::from_secs_f32(t * period);
+    let (up_at, down_at) = (0.5 - slide, 1. - slide);
+    // Where the cycle is now: the face it rests on (or the end of the slide
+    // it is in), and which slide comes next, in which cycle.
+    let (mut cycle, mut up_next) = if t < up_at {
         y.set(0.);
-        vec![Animation::delay((0.5 - slide - t) * ms), up(), Animation::delay(rest), down()]
+        (0u64, true)
     } else if t < 0.5 {
         y.set(-h * peek_offset(t, slide));
-        vec![Animation::timing(y, -h, motion::ambient((0.5 - t) * ms, EXP6_OUT)), Animation::delay(rest), down()]
-    } else if t < 1. - slide {
+        let _ = y.timing_with(-h, motion::ambient((0.5 - t) * period * 1000., EXP6_OUT));
+        (0, false)
+    } else if t < down_at {
         y.set(-h);
-        vec![Animation::delay((1. - slide - t) * ms), down()]
+        (0, false)
     } else {
         y.set(-h * peek_offset(t, slide));
-        vec![Animation::timing(y, 0., motion::ambient((1. - t) * ms, EXP6_OUT))]
+        let _ = y.timing_with(0., motion::ambient((1. - t) * period * 1000., EXP6_OUT));
+        (1, true)
     };
-    Animation::sequence(first.into_iter().chain([cycle]))
+    spawn(async move {
+        loop {
+            let at = cycle as f32 + if up_next { up_at } else { down_at };
+            let start = origin + std::time::Duration::from_secs_f32(at * period);
+            timer(start.saturating_duration_since(Instant::now())).await;
+            let to = if up_next { -h } else { 0. };
+            let _ = y.timing_with(to, motion::ambient(slide_ms, IN_OUT_CUBIC)).await;
+            if !up_next {
+                cycle += 1;
+            }
+            up_next = !up_next;
+        }
+    });
 }
 
 /// What a custom face draws, given the tile size.
@@ -336,9 +354,8 @@ impl IntoElement for Tile {
         let body = match back {
             Some(back) if !reduced_motion() => {
                 let y = animated_value(0.);
-                let anim = peek_animation(&y, h, self.period, self.phase);
-                let _ = anim.start();
-                cleanup(move || anim.stop());
+                // Runs with the tile and ends with it.
+                peek(y, h, self.period, self.phase);
                 // The strip holds both faces stacked; it rides up by one face.
                 view()
                     .absolute()
