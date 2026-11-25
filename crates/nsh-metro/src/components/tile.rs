@@ -992,6 +992,9 @@ impl TileGrid {
             let columns = columns.clone();
             move || u(width_of(columns.get()))
         };
+        // The planes the tiles ride on are as wide as the grid; `each`
+        // builds one per tile, so it keeps a reader of its own.
+        let plane_columns = columns.clone();
         let slots: Slots = Rc::default();
         let keys = signal(Vec::<SharedString>::new());
         let height = signal(0f32);
@@ -1157,10 +1160,22 @@ impl TileGrid {
                 let mut slots = slots.borrow_mut();
                 let Some(slot) = slots.get_mut(&key) else { return view().into_element() };
                 let tile = slot.tile.take().map(|t| t.metrics(unit, gap).into_element());
+                // The plane is as wide as the grid. A tile is put in its
+                // place by a transform, and hit testing only looks inside a
+                // view whose own box holds the point: a plane the width of
+                // one tile would leave every tile but the leftmost of its
+                // row untouchable. The planes overlap, so they take no
+                // press of their own — the tile on them does.
+                let plane = {
+                    let columns = plane_columns.clone();
+                    move || u(width_of(columns.get()))
+                };
                 view()
                     .absolute()
                     .left_0()
                     .top_0()
+                    .w(plane)
+                    .pointer_events(PointerEvents::BoxNone)
                     .bind_translate_y(&slot.y)
                     // The turned plane stays at the grid's left edge and the
                     // tile slides inside it, so the hinge (a fixed distance
@@ -1171,6 +1186,12 @@ impl TileGrid {
                         // A new tile swings open about its own left edge,
                         // like a door, fading in as it comes square.
                         view()
+                            // The tile keeps its own width on a plane wider
+                            // than it: what rides on it (the tilt, which
+                            // reads the pointer's place across its face)
+                            // must measure the tile, not the plane.
+                            .self_start()
+                            .pointer_events(PointerEvents::BoxNone)
                             .bind_translate_x(&slot.x)
                             .bind_opacity(&slot.arrive.interpolate(&[0., 30., ARRIVE_FROM_DEG], &[1., 0.85, 0.]))
                             .child(motion::turned(&slot.arrive, 0., tile.unwrap_or_else(|| view().into_element()))),

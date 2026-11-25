@@ -144,9 +144,13 @@ pub fn hinge_origin(hinge: f32) -> TransformOrigin {
 /// (degrees), seen in perspective. The perspective sits on a wrapper: nsh,
 /// like CSS, gives a view's children their depth.
 pub fn turned(angle: &AnimatedValue, hinge: f32, child: impl IntoElement) -> View {
-    view().perspective(px(TURN_PERSPECTIVE)).child(
+    // A plane that exists to turn what is on it takes no press of its own:
+    // it may be wider than that child (a tile on a grid's plane) and would
+    // otherwise swallow a press meant for what is beside or behind it.
+    view().perspective(px(TURN_PERSPECTIVE)).pointer_events(PointerEvents::BoxNone).child(
         view()
             .flex_1()
+            .pointer_events(PointerEvents::BoxNone)
             .transform_origin(hinge_origin(hinge))
             .bind_transform(TransformKind::RotateY, angle)
             // Edge-on, a plane off the camera's axis still shows its side in
